@@ -1,8 +1,10 @@
 import { Router } from "express";
-import userRouter from "../controllers/user";
+import userRouter from "../controllers/user/userControllerRouting";
+import messAdminRouter from "../controllers/messAdmin/adminControllerRounting";
 
 const mainRouter = Router();
 
-mainRouter.use("/user", userRouter);     // Access via /api/v1/user/
+mainRouter.use("/user", userRouter);
+mainRouter.use("/messAdmin", messAdminRouter);
 
 export default mainRouter;

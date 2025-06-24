@@ -2,12 +2,12 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { userModel } from "../../model/user";
 import dotenv from "dotenv";
-import { validateSignin, validateSignup } from "../../utils/validators";
+import { validateUserSignup, validateUserSignin } from "../../utils/validators/userValidators/authValidators";
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
 export const authService = {
     async signup(data: any) {
-        const validatedData = validateSignup(data);
+        const validatedData = validateUserSignup(data);
         const existingUser = await userModel.findOne({ email: validatedData.email });
         if (existingUser) {
             throw new Error("User Already Exists");
@@ -24,7 +24,7 @@ export const authService = {
         return { user, token }
     },
     async signin(data: any) {
-        const validatedData = validateSignin(data);
+        const validatedData = validateUserSignin(data);
         const user = await userModel.findOne({ email: validatedData.email });
         if (!user) {
             throw new Error("User does not exist");
