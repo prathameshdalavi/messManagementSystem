@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 const menuSchema = new Schema({
-    mess_id: { type: String, required: true },
+    mess_id: { type: mongoose.Schema.Types.ObjectId, required: true },
     menu: [
         {
             day: String,
@@ -11,8 +11,7 @@ const menuSchema = new Schema({
                 snacks: [String],
             }
         }
-    ],
-    updatedAt: { type: Date, default: Date.now }
+    ]
 })
 const menuModel = mongoose.model("Menu", menuSchema);
 export {menuModel};
