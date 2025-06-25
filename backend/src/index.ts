@@ -2,6 +2,7 @@ import  express  from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import mainRouter from "./routes";
+import "./utils/corn/cronJobs";
 const app= express();
 dotenv.config();
 const PORT=process.env.PORT;

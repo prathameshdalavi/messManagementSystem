@@ -6,7 +6,7 @@ const userSchema = new Schema({
     password: { type: String, required: true },
     phone: { type: Number, required: true },
     hostelAddress: { type: String, required: true },
-    isSubActive: { type: Boolean, default: true },
+    isSubActive: { type: Boolean, default: false },
 })
 const userModel = mongoose.model("User", userSchema);
 export { userModel };
