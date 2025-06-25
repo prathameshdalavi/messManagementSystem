@@ -7,6 +7,7 @@ const userSchema = new Schema({
     phone: { type: Number, required: true },
     hostelAddress: { type: String, required: true },
     isSubActive: { type: Boolean, default: false },
+    planId: { type: Schema.Types.ObjectId },
 })
 const userModel = mongoose.model("User", userSchema);
 export { userModel };

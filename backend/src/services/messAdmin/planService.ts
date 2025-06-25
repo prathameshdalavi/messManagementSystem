@@ -15,8 +15,9 @@ export const planService = {
     }
 
     const newPlan = await SubscriptionPlanModel.create({
-      mess_id: messId,
+      
       name: validatedPlan.name,
+      mess_id: messId,
       description: validatedPlan.description,
       amount: validatedPlan.amount,
       durationDays: validatedPlan.durationDays,
