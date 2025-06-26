@@ -16,6 +16,6 @@ export const planService = {
         if (!plans || plans.length === 0 ) {
             throw new Error("No plans found for this mess");
         }
-        return plans;
+        return plans; 
     },
 };

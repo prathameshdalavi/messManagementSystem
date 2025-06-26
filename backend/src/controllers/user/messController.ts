@@ -1,9 +1,10 @@
 import { Request, Response, Router } from "express";
 import { ApiResponse } from "../../utils/apiResponce";
 import { nearbyMessService ,assignMessService} from "../../services/user/messService";
+import { userMiddleware } from "../../middlewares/user/userMiddleware";
 
 
-const router = Router();
+const   router = Router();
 
 router.get("/nearby", async (req: Request, res: Response) => {
   const lat = parseFloat(req.query.lat as string);
@@ -24,8 +25,9 @@ router.get("/nearby", async (req: Request, res: Response) => {
 });
 
 
-router.post("/select-mess", async (req: Request, res: Response) => {
-  const { userId, messId } = req.body;
+router.post("/select-mess",userMiddleware, async (req: Request, res: Response) => {
+  const userId = req.body.UserId;
+  const messId = req.body.messId;
 
   if (!userId || !messId) {
     new ApiResponse(res).error("User ID and Mess ID required");

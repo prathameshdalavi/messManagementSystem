@@ -16,9 +16,9 @@ export const attendanceService = {
         if (!user.mess_id) {
             throw new Error("User is not assigned to any mess");
         }
-        if (user.isSubActive === false) {
-            throw new Error("User's subscription is not active");
-        }
+        // if ( === false) {
+        //     throw new Error("User's subscription is not active");
+        // }
         if (user.mess_id.toString() !== scannedMessId) {
             throw new Error("User is not authorized to mark attendance for this mess");
         }

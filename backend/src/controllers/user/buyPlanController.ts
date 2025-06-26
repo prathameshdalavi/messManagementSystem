@@ -18,4 +18,4 @@ router.post("/buyPlan",userMiddleware, async function (req: Request, res: Respon
     }
 })
 
-export default router;
+export default router;  
