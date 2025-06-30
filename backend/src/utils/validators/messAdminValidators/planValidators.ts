@@ -4,5 +4,6 @@ export const validatePlan = z.object({
     description:z.string(),
     amount:z.number().positive(),
     durationDays:z.number().int().positive(),
+    maxNoOfPausePerMonth:z.number().int().positive(),
     features:z.array(z.string())
 }).parse;

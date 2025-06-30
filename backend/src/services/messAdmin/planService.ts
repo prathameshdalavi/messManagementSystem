@@ -21,6 +21,7 @@ export const planService = {
       description: validatedPlan.description,
       amount: validatedPlan.amount,
       durationDays: validatedPlan.durationDays,
+      maxNoOfPausePerMonth: validatedPlan.maxNoOfPausePerMonth,
       features: validatedPlan.features,
     });
 
@@ -65,6 +66,7 @@ export const planService = {
             description: validatedPlan.description,
             amount: validatedPlan.amount,
             durationDays: validatedPlan.durationDays,
+            maxNoOfPausePerMonth: validatedPlan.maxNoOfPausePerMonth,
             features: validatedPlan.features,
             updatedAt: Date.now(),
         },

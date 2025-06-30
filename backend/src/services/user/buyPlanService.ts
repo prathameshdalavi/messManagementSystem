@@ -30,7 +30,10 @@ export const buyPlanService = {
             purchaseDate: new Date(),
             isActive: true,
             expiryDate: expiryDate,
-            messId: messId
+            messId: messId,
+            monthlyPausedDays: [],
+            isPaused: false,
+            totalPaused: 0,
         });
         return purchasedPlan;
     }

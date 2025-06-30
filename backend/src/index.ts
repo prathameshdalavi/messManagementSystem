@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import mainRouter from "./routes";
 import "./utils/corn/cronJobs";
+import { startAutoResumeCron } from "./utils/corn/cronJobs";
 const app= express();
 dotenv.config();
 const PORT=process.env.PORT;
@@ -13,8 +14,11 @@ async function main() {
         if(!process.env.MONGODB_URL){
             throw new Error("MONGODB_URL is not defined in .env file");
         }
+
         await mongoose.connect(process.env.MONGODB_URL);
         console.log(" MongoDB Connected Successfully!");
+        // Start cron jobs
+        startAutoResumeCron();
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
         })
