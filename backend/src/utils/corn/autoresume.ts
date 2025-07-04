@@ -68,7 +68,13 @@ export const autoResumePausedPlans = async (): Promise<{ message: string }> => {
         newMonthlyPause = {
           month: newMonth,
           noofDaysinMonth: 0,
-          pauseEntries: [],
+          pauseEntries: [
+            {
+              startDate: nextMonthStart,
+              daysforthatPause: 0,
+              reason: lastPauseEntry.reason || "Auto-continued from last month",
+            },
+          ],
         };
         allMonths.push(newMonthlyPause);
       }

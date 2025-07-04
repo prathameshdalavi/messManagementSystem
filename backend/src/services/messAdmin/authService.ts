@@ -6,7 +6,7 @@ import { validateMessAdminSignup, validateMessAdminSignin } from "../../utils/va
 import mongoose from "mongoose";
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
-export const authService = {
+export const  authService = {
     async signup(data: any) {
         const validatedData = validateMessAdminSignup(data);
         const existingUser = await messAdminModel.findOne({ email: validatedData.email });

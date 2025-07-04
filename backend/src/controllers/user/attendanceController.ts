@@ -17,5 +17,16 @@ router.post("/markattendance",userMiddleware,async function (req:Request,res:Res
         return;
     }
 })
+router.get("/getRecords",userMiddleware,async function (req:Request,res:Response) {
+    try{
+        const userId = req.body.UserId;
+        const records = await attendanceService.getRecords(userId);
+        new ApiResponse(res).success(records, "Attendance records fetched successfully");
+        return;
+    }catch(error){
+        new ApiResponse(res).error(error);
+        return;
+    }
+})
 
 export default router
