@@ -1,7 +1,6 @@
 import { PurchasedPlanModel } from "../../model/purchasedPlan";
 import { SubscriptionPlanModel} from "../../model/subcriptionPlan";
 
-// Define PauseEntry and MonthlyPause interfaces (you can move this to a shared types file)
 interface PauseEntry {
   startDate: Date;
   daysforthatPause: number;
@@ -12,6 +11,52 @@ interface MonthlyPause {
   month: string;
   noofDaysinMonth: number;
   pauseEntries: PauseEntry[];
+}
+
+function getCurrentWindow(purchaseDate: Date, currentDate: Date): number {
+  const diffInMs = currentDate.getTime() - purchaseDate.getTime();
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  return Math.floor(diffInDays / 30);
+}
+
+function getWindowStartDate(purchaseDate: Date, windowIndex: number): Date {
+  const startDate = new Date(purchaseDate);
+  startDate.setDate(purchaseDate.getDate() + (windowIndex * 30));
+  return startDate;
+}
+
+function getWindowEndDate(purchaseDate: Date, windowIndex: number): Date {
+  const endDate = new Date(purchaseDate);
+  endDate.setDate(purchaseDate.getDate() + (windowIndex * 30) + 29);
+  endDate.setHours(23, 59, 59, 999);
+  return endDate;
+}
+
+function getPausedDaysInWindow(plan: any, windowIndex: number, purchaseDate: Date): number {
+  const windowStart = getWindowStartDate(purchaseDate, windowIndex);
+  const windowEnd = getWindowEndDate(purchaseDate, windowIndex);
+  
+  let totalPausedDays = 0;
+
+  for (const monthlyPause of plan.monthlyPausedDays) {
+    for (const pauseEntry of monthlyPause.pauseEntries) {
+      const pauseStart = new Date(pauseEntry.startDate);
+      const pauseEnd = new Date(pauseStart);
+      pauseEnd.setDate(pauseStart.getDate() + pauseEntry.daysforthatPause - 1);
+      
+      if (pauseStart <= windowEnd && pauseEnd >= windowStart) {
+        const overlapStart = new Date(Math.max(pauseStart.getTime(), windowStart.getTime()));
+        const overlapEnd = new Date(Math.min(pauseEnd.getTime(), windowEnd.getTime()));
+        
+        if (overlapStart <= overlapEnd) {
+          const overlapDays = Math.floor((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          totalPausedDays += overlapDays;
+        }
+      }
+    }
+  }
+
+  return totalPausedDays;
 }
 
 export const autoResumePausedPlans = async (): Promise<{ message: string }> => {
