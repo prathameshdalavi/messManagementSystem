@@ -6,7 +6,7 @@ let io: SocketIOServer;
 export const initSocket = (server: HTTPServer) => {
   io = new SocketIOServer(server, {
     cors: {
-      origin: "*", // Update in production
+      origin: "*",
     },
   });
 

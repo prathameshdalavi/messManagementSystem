@@ -21,4 +21,4 @@ const purchasedPlanSchema = new Schema({
     totalPaused: { type: Number, default: 0 },
 });
 const PurchasedPlanModel = mongoose.model("PurchasedPlan", purchasedPlanSchema);
-export { PurchasedPlanModel };   
+export { PurchasedPlanModel }; 

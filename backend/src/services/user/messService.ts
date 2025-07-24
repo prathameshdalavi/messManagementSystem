@@ -16,13 +16,13 @@ export const nearbyMessService = {
     });
   },
 };
-export const assignMessService = {
-  async assignMessToUser(userId: string, messId: string) {
-    return await userModel.findByIdAndUpdate(
-      userId,
-      { mess_id: messId },
-      { new: true }
-    );
-  },
-};
+// export const assignMessService = {
+//   async assignMessToUser(userId: string, messId: string) {
+//     return await userModel.findByIdAndUpdate(
+//       userId,
+//       { mess_id: messId },
+//       { new: true }
+//     );
+//   },
+// };
 

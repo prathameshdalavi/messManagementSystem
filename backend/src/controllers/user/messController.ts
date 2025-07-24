@@ -1,11 +1,12 @@
 import { Request, Response, Router } from "express";
 import { ApiResponse } from "../../utils/apiResponce";
-import { nearbyMessService ,assignMessService} from "../../services/user/messService";
+import { nearbyMessService } from "../../services/user/messService";
 import { userMiddleware } from "../../middlewares/user/userMiddleware";
 
 
 const   router = Router();
 
+export const getNearbyMesses = 
 router.get("/nearby", async (req: Request, res: Response) => {
   const lat = parseFloat(req.query.lat as string);
   const lng = parseFloat(req.query.lng as string);
@@ -25,24 +26,23 @@ router.get("/nearby", async (req: Request, res: Response) => {
 });
 
 
-router.post("/select-mess",userMiddleware, async (req: Request, res: Response) => {
-  const userId = req.body.UserId;
-  const messId = req.body.messId;
+// router.post("/select-mess", async (req: Request, res: Response) => {
+//   const messId = req.body.messId;
 
-  if (!userId || !messId) {
-    new ApiResponse(res).error("User ID and Mess ID required");
-    return;
-  }
+//   if ( !messId) {
+//     new ApiResponse(res).error("User ID and Mess ID required");
+//     return;
+//   }
 
-  try {
-    const updatedUser = await assignMessService.assignMessToUser(userId, messId);
-    new ApiResponse(res).success(updatedUser, "Mess assigned to user", 200);
-    return;
-  } catch (error) {
-    new ApiResponse(res).error(error);
-    return;
-  }
-});
+//   try {
+//     const updatedUser = await assignMessService.assignMessToUser( messId);
+//     new ApiResponse(res).success(updatedUser, "Mess assigned to user", 200);
+//     return;
+//   } catch (error) {
+//     new ApiResponse(res).error(error);
+//     return;
+//   }
+// });
 
 
 

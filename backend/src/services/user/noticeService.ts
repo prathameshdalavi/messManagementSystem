@@ -1,8 +1,9 @@
 import { NoticeModel } from "../../model/notice";
+import { SubscriptionPlanModel } from "../../model/subcriptionPlan";
 import { userModel } from "../../model/user";
 
 export const noticeService = {
-    async getNotices(userId: string) {
+    async getNotices(userId: string, mess_id: string) {
         if (!userId) {
             throw new Error("User ID is required");
         }
@@ -10,10 +11,7 @@ export const noticeService = {
         if (!user) {
             throw new Error("User not found");
         }
-        if (!user.mess_id) {
-            throw new Error("User is not assigned to any mess");
-        }
-        const mess_id = user.mess_id;
+        
         if (!mess_id) {
             throw new Error("User is not assigned to any mess");
         }

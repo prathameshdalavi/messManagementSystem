@@ -7,7 +7,8 @@ const router=Router();
 router.get("/getNotices",async function (req:Request,res:Response) {
     try{
         const userId = req.query.userId as string;
-        const notices = await noticeService.getNotices(userId);
+        const mess_id = req.query.mess_id as string;
+        const notices = await noticeService.getNotices(userId, mess_id);
         new ApiResponse(res).success(notices, "Notices fetched successfully");
         return;
     }catch(error){

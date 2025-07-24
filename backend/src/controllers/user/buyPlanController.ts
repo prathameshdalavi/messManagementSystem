@@ -17,5 +17,4 @@ router.post("/buyPlan",userMiddleware, async function (req: Request, res: Respon
         return;
     }
 })
-
 export default router;  

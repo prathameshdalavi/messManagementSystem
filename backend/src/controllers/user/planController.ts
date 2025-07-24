@@ -6,10 +6,11 @@ import { planService } from "../../services/user/planService";
 
 
 const router =Router();
-router.get("/getPlans",userMiddleware,async function (req: Request, res: Response) {
+router.get("/getPlans",async function (req: Request, res: Response) {
     try {
-        const user_Id = req.body.UserId;
-        const plan = await planService.getPlans(user_Id);
+        
+        const messId = req.body.messId;
+        const plan = await planService.getPlans( messId);
         new ApiResponse(res).success(plan, "Subscription plan fetched successfully");
         return;
     } catch (error) {

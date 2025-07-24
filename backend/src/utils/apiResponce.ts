@@ -9,7 +9,6 @@ export class ApiResponse {
         });
     }
     error(error: any, statusCode: number = 500) {
-        console.error(error);
         return this.res.status(statusCode).json({
             success: false,
             message: error.message || "Internal server error",
