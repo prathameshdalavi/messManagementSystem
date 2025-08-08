@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { BACKEND_URL } from '../../config';
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from 'axios';
 
 export const SignupPage = () => {
@@ -10,7 +10,9 @@ export const SignupPage = () => {
   const countryCodeRef = useRef<HTMLInputElement>(null);
   const hostelRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const location=useLocation()
   const navigate = useNavigate();
+   const redirectTo = location.state?.from || "/";
 
   async function signup(event: React.FormEvent) {
     event.preventDefault();
@@ -41,7 +43,7 @@ export const SignupPage = () => {
       }
 
       alert("Signed Up Successfully");
-      navigate("/signin");
+      navigate(redirectTo);
 
     } catch (error: any) {
       console.error("Axios error:", error);

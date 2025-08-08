@@ -8,18 +8,21 @@ function userMiddleware(req: Request, res: Response, next: NextFunction) {
     if (typeof token === "string") {
         const decodedToken = Jwt.verify(token, JWT_SECRET);
         console.log(decodedToken);
+        if (req.body == null) {
+            req.body = {};
+        }
         if (decodedToken) {
             // @ts-ignore
             req.body.UserId = decodedToken.UserId;
             console.log(req.body.UserId);
             next();
         }
-        else{
+        else {
             res.status(401).json({
-                message:"You are not Signed in",
+                message: "You are not Signed in",
                 decodedToken
-            })  
+            })
         }
     }
 }
-export{userMiddleware};
+export { userMiddleware };

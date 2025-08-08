@@ -1,19 +1,16 @@
 
-import { NavBar } from '../../components/navBar';
 import { HeroSection } from './heroSection';
 import { SearchSection } from '../../components/searchSection';
 import { FeaturesGrid } from '../../components/featuresGrid';
 import { Footer } from '../../components/footer';
 import React from 'react';
+import { ServiceSection } from '../../components/serviceSection';
 
 export const HomePage = () => {
   const searchRef = React.useRef<HTMLDivElement>(null);
   return (
     <>
       <div className="font-sans bg-white overflow-hidden">
-
-        <NavBar />
-        {/* Hero Section */}
 
         <HeroSection searchRef={searchRef} />
         {/* Search Section */}
@@ -22,7 +19,7 @@ export const HomePage = () => {
         {/* Features Grid */}
         <FeaturesGrid />
 
-
+        <ServiceSection />
 
         {/* Footer */}
         <Footer />

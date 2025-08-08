@@ -1,12 +1,14 @@
 // src/pages/SignInPage.tsx
 import { useRef } from 'react';
 import { BACKEND_URL } from '../../config';
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from 'axios';
 
 export const SignInPage = () => {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
+  const redirectTo = location.state?.from || "/"; // Redirect to the page user came
   const navigate = useNavigate();
 
   async function signin(event: React.FormEvent) {
@@ -29,7 +31,7 @@ export const SignInPage = () => {
       if (jwtToken) {
         localStorage.setItem("token", jwtToken);
         alert("Signed In Successfully");
-        navigate("/"); // Change to "/dashboard" or "/home" as needed
+        navigate(redirectTo); // Change to "/dashboard" or "/home" as needed
       }
 
     } catch (error: any) {

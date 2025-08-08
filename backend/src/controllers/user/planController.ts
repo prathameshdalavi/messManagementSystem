@@ -9,7 +9,7 @@ const router =Router();
 router.get("/getPlans",async function (req: Request, res: Response) {
     try {
         
-        const messId = req.body.messId;
+        const messId = req.query.messId as string;
         const plan = await planService.getPlans( messId);
         new ApiResponse(res).success(plan, "Subscription plan fetched successfully");
         return;

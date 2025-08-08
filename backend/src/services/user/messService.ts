@@ -2,7 +2,7 @@ import { messAdminModel } from "../../model/messAdmin";
 import { userModel } from "../../model/user";
 
 export const nearbyMessService = {
-  async getNearbyMesses(lat: number, lng: number, maxDistance = 5000) {
+  async getNearbyMesses(lat: number, lng: number, maxDistance = 5000000) {
     return await messAdminModel.find({
       location: {
         $nearSphere: {

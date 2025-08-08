@@ -1,20 +1,22 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaUtensils } from 'react-icons/fa';
-import { NavBar } from '../../components/navBar';
+import { useDispatch } from 'react-redux';
+import { setNearbyMess } from '../../redux/nearbyMessSlice';
 
 export const NearbyMessPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const messes = location.state?.messes || [];
 
-  const handleMessClick = (messId: string) => {
-    navigate('/details', { state: { messId } });
+  const handleMessClick = (mess: any) => {
+    dispatch(setNearbyMess(mess));// ✅ store selected mess in Redux
+    navigate('/details'); // ✅ don't pass messId anymore, use Redux instead
   };
 
   return (
     <div className="min-h-screen bg-white font-sans">
-      <NavBar />
       <section className="py-16 px-6">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl font-bold text-gray-900 mb-6">Nearby Messes</h2>
@@ -23,11 +25,11 @@ export const NearbyMessPage = () => {
             <p className="text-gray-600 text-lg">No messes found near you.</p>
           ) : (
             <div className="grid gap-6">
-              {messes.map((mess: any, index: number) => (
+              {messes.map((mess: any) => (
                 <div
-                  key={index}
+                  key={mess._id}
                   className="cursor-pointer border border-gray-200 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
-                  onClick={() => handleMessClick(mess._id)}
+                  onClick={() => handleMessClick(mess)}
                 >
                   <div className="flex items-start">
                     <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mt-2 mr-4">
