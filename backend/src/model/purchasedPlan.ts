@@ -15,7 +15,7 @@ const purchasedPlanSchema = new Schema({
     purchaseDate: { type: Date, default: Date.now },
     isActive: { type: Boolean, default: true },
     expiryDate: { type: Date, required: true },
-    messId: { type: mongoose.Schema.Types.ObjectId, ref: "Mess", required: true },
+    messId: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
     monthlyPausedDays: { type: [pausedDaySchema], default: [] },
     isPaused: { type: Boolean, default: false },
     totalPaused: { type: Number, default: 0 },

@@ -46,7 +46,6 @@ export const SignupPage = () => {
       navigate(redirectTo);
 
     } catch (error: any) {
-      console.error("Axios error:", error);
       const message = error?.response?.data?.message || "Signup failed. Please try again.";
       alert(message);
     }

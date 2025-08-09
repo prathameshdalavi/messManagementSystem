@@ -6,8 +6,11 @@ import { myPlansService } from "../../services/user/myPlanService";
 const router = Router();
 router.get("/myPlans",userMiddleware, async function (req: Request, res: Response) {
     try{
-        const user_Id = req.body.UserId;
-        console.log("User ID from middleware:", user_Id);
+        const user_Id = req.user?.id;
+        if (!user_Id) {
+            new ApiResponse(res).error("User ID not found");
+            return;
+        }
         const myPlans=await myPlansService.getMyPlans(user_Id);
         new ApiResponse(res).success(myPlans, "My plans fetched successfully");
         return;

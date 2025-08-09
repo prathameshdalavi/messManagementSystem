@@ -7,11 +7,16 @@ import { pauseResumePlanService } from "../../services/user/pausePlanService";
 const router=Router()
 router.post("/pausePlan",userMiddleware,async function (req:Request,res:Response) {
     try{
-        const userId = req.body.UserId;
+        const userId = req.user?.id;
+        if (!userId) {
+            new ApiResponse(res).error("User ID not found");
+            return;
+        }
         const planId = req.body.planId;
         const reason=req.body.reason;
-        if (!userId || !planId) {
-            throw new Error("UserId and planId are required");
+        if (!planId) {
+            new ApiResponse(res).error("Plan ID is required");
+            return;
         }
         const pausePlan = await pauseResumePlanService.pausePlan(userId, planId,reason);
         new ApiResponse(res).success(pausePlan, "Plan paused successfully");
@@ -24,10 +29,15 @@ router.post("/pausePlan",userMiddleware,async function (req:Request,res:Response
 })
 router.post("/resumePlan",userMiddleware,async function (req:Request,res:Response) {
     try{
-        const userId = req.body.UserId;
+        const userId = req.user?.id;
+        if (!userId) {
+            new ApiResponse(res).error("User ID not found");
+            return;
+        }
         const planId = req.body.planId;
-        if (!userId || !planId) {
-            throw new Error("UserId and planId are required");
+        if (!planId) {
+            new ApiResponse(res).error("Plan ID is required");
+            return;
         }
         const resumePlan = await pauseResumePlanService.resumePlan(userId, planId);
         new ApiResponse(res).success(resumePlan, "Plan resumed successfully");

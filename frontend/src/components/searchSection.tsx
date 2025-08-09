@@ -32,8 +32,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
 
             });
         } catch (error) {
-            console.error("Location or fetch error:", error);
-            alert("Error getting location or fetching messes. Please try again.");
+            alert('Failed to get location or fetch nearby messes');
         } finally {
             setIsLocating(false);
         }
@@ -46,15 +45,16 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
             setIsLocating(true);
             setShowResults(false);
 
-            const response = await axios.get(`/api/v1/user/mess/search`, {
+            const response = await axios.get(`${BACKEND_URL}/api/v1/user/mess/search`, {
                 params: { query: searchQuery }
             });
 
-            setNearbyMesses(response.data);
+            setNearbyMesses(response.data?.data || []);
             setShowResults(true);
         } catch (error) {
-            console.error('Error searching messes:', error);
-            alert('Error searching messes. Please try again.');
+            alert('Search failed');
+            setNearbyMesses([]);
+            setShowResults(true);
         } finally {
             setIsLocating(false);
         }

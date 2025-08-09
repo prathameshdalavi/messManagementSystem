@@ -1,6 +1,7 @@
 import { AttendanceModel } from "../../model/attendance";
 import { PurchasedPlanModel } from "../../model/purchasedPlan";
 import { userModel } from "../../model/user";
+import mongoose from "mongoose";
 
 export const attendanceService = {
     async markAttendance(userId: string, scannedMessId: string, type: string) {
@@ -18,29 +19,28 @@ export const attendanceService = {
         if (!user) {
             throw new Error("User not found");
         }
-        if (!user.mess_id) {
-            throw new Error("User is not assigned to any mess");
-        }
 
-        if (user.mess_id.toString() !== scannedMessId) {
-            throw new Error("User is not authorized to mark attendance for this mess");
-        }
-
+        // Check if user has an active plan for the scanned mess
         const check = await PurchasedPlanModel.findOne({
             userId: userId,
-            messId: user.mess_id,
-            isPaused: false,
-            isActive: true,
+            messId: scannedMessId,
+            isActive: true
+            // Removed isPaused: false condition to allow paused plans
         });
         if (!check) {
-            throw new Error("User has no active plan. Cannot mark attendance.");
+            throw new Error("User has no active plan for this mess. Cannot mark attendance.");
+        }
+        
+        // If plan is paused, don't allow marking attendance
+        if (check.isPaused) {
+            throw new Error("Your plan is currently paused. Cannot mark attendance while plan is paused.");
         }
 
         const today = new Date();
 
         const existingAttendance = await AttendanceModel.findOne({
             user_id: userId,
-            mess_id: user.mess_id,
+            mess_id: scannedMessId,
             type: type,
             date: today
         });
@@ -50,7 +50,7 @@ export const attendanceService = {
 
         const attendanceRecord = await AttendanceModel.create({
             user_id: userId,
-            mess_id: user.mess_id,
+            mess_id: scannedMessId,
             type: type,
             date: today,
         });
@@ -58,47 +58,70 @@ export const attendanceService = {
         return attendanceRecord;
     },
 
-    async getRecords(userId: string) {
+    async getRecords(userId: string, messId: string) {
         if (!userId) {
             throw new Error("User ID is required");
+        }
+        if (!messId) {
+            throw new Error("Mess ID is required");
         }
 
         const user = await userModel.findById(userId);
         if (!user) {
             throw new Error("User not found");
         }
-        if (!user.mess_id) {
-            throw new Error("User is not assigned to any mess");
-        }
 
-        
+        // Check if messId is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(messId)) {
+            throw new Error("Invalid messId format");
+        }
 
         const plan = await PurchasedPlanModel.findOne({
             userId: userId,
-            messId: user.mess_id,
-            isPaused: false,
+            messId: messId,
             isActive: true
+            // Removed isPaused: false condition to allow paused plans
         });
         
+        if (!plan) {
+            throw new Error("No active plan found for this user and mess");
+        }
 
-        const startDate = plan?.purchaseDate;//change it by startDate of the mess plan after changing purchasedplan
-        const records = await AttendanceModel.find({
-            user_id: userId,
-            mess_id: user.mess_id,
-            date: { $gte: startDate }
-        });
-        const todaysDate = new Date();
-        todaysDate.setHours(0, 0, 0, 0);
-
+        const startDate = plan.purchaseDate;
         if (!startDate) {
             throw new Error("Plan purchase date not found.");
         }
 
+        const records = await AttendanceModel.find({
+            user_id: userId,
+            mess_id: messId,
+            date: { $gte: startDate }
+        });
+        
+        const todaysDate = new Date();
+        todaysDate.setHours(0, 0, 0, 0);
+
         const diffDays = Math.floor((todaysDate.getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-        let totalDays = diffDays;
-        const pausedDays = 0;
-        totalDays = totalDays - pausedDays;
+        // Calculate paused days from the plan
+        let totalPausedDays = 0;
+        if (plan.monthlyPausedDays && plan.monthlyPausedDays.length > 0) {
+            plan.monthlyPausedDays.forEach(monthData => {
+                if (monthData.pauseEntries && monthData.pauseEntries.length > 0) {
+                    monthData.pauseEntries.forEach(pauseEntry => {
+                        totalPausedDays += pauseEntry.daysforthatPause || 0;
+                    });
+                }
+            });
+        }
+        
+        // Also add the totalPaused field if it exists
+        if (plan.totalPaused) {
+            totalPausedDays += plan.totalPaused;
+        }
+
+        let totalDays = diffDays - totalPausedDays;
+        if (totalDays < 0) totalDays = 0; // Ensure totalDays is not negative
 
         const countByType = (type: string) =>
             records.filter((record) => record.type === type).length;
@@ -117,7 +140,7 @@ export const attendanceService = {
         const breakfastAttendancePercentage = round((getBreakfastAttendanceCount / totalDays) * 100);
         const dinnerAttendancePercentage = round((getDinnerAttendanceCount / totalDays) * 100);
 
-        return {
+        const result = {
             totalDays,
             getLunchAttendanceCount,
             getBreakfastAttendanceCount,
@@ -127,7 +150,11 @@ export const attendanceService = {
             getDinnerAbsentyCount,
             lunchAttendancePercentage,
             breakfastAttendancePercentage,
-            dinnerAttendancePercentage
+            dinnerAttendancePercentage,
+            isPlanPaused: plan.isPaused,
+            totalPausedDays
         };
+        
+        return result;
     }
 };

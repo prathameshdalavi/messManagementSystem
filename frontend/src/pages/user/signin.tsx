@@ -34,10 +34,8 @@ export const SignInPage = () => {
         navigate(redirectTo); // Change to "/dashboard" or "/home" as needed
       }
 
-    } catch (error: any) {
-      console.error("Sign in error:", error);
-      const message = error?.response?.data?.message || "Sign in failed. Please try again.";
-      alert(message);
+    } catch (error) {
+      alert("Invalid credentials");
     }
   }
 

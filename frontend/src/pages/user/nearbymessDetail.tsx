@@ -54,9 +54,10 @@ export const NearbyMessDetail = () => {
         const planRes = await axios.get(`${BACKEND_URL}/api/v1/user/plan/getPlans`, {
           params: { messId: mess._id },
         });
+       
         setPlanData(planRes.data.data || []);
       } catch (error: any) {
-        console.error("Error fetching data:", error.response?.data || error.message);
+        // Error fetching data
       } finally {
         setLoading(false);
       }
@@ -85,9 +86,7 @@ export const NearbyMessDetail = () => {
       );
 
       alert("Plan purchased successfully!");
-      console.log("Response:", response.data);
     } catch (error: any) {
-      console.error("Error buying plan:", error);
       alert(error?.response?.data?.message || "Failed to buy plan.");
     }
   };

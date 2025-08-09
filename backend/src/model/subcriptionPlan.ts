@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import { number } from "zod";
 const SubscriptionPlanSchema = new Schema({
     name: { type: String, required: true },
-    mess_id: { type: mongoose.Schema.Types.ObjectId,required:true },
+    mess_id: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
     description: { type: String },
     amount: { type: Number, required: true },
     durationDays: { type: Number, required: true },

@@ -2,15 +2,18 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
+import { useDispatch, useSelector } from "react-redux";
+import { setSelectedPlan, clearSelectedPlan, selectSelectedPlan } from "../redux/nearbyMessSlice";
 
 interface SidebarProps {
   opensidebar: boolean;
   toggleSidebar: () => void;
   currentMenu: string;
   setCurrentMenu: (menu: string) => void;
-  selectedPlan: any | null;
-  setSelectedPlan: (plan: any | null) => void;
   userPlans: any[];
+  setUserPlans: (plans: any[]) => void;
+  selectedFunctionality: string;
+  setSelectedFunctionality: (func: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -18,11 +21,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   toggleSidebar,
   currentMenu,
   setCurrentMenu,
-  selectedPlan,
-  setSelectedPlan,
   userPlans,
+  setUserPlans,
+  selectedFunctionality,
+  setSelectedFunctionality,
 }) => {
   const [loadingPlans, setLoadingPlans] = useState(false);
+  const dispatch = useDispatch();
+  const selectedPlan = useSelector(selectSelectedPlan);
 
   const sidebarItems = [
     { label: "Home", subItems: [] },
@@ -32,12 +38,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { label: "Logout", subItems: [] },
   ];
 
-  const planFeatures = [
-    "Attendance",
-    "Feedback",
-    "Notice",
-    "Billing",
-    "Pause/Resume",
+  const functionalityButtons = [
+    { id: "notices", label: "Notices" },
+    { id: "menu", label: "Menu" },
+    { id: "attendance", label: "Attendance" },
+    { id: "feedback", label: "Feedback" },
+    { id: "pause", label: "Pause/Resume" },
+    { id: "stats", label: "Statistics" },
+    { id: "settings", label: "Settings" },
   ];
 
   const handleMyPlansClick = async () => {
@@ -46,14 +54,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get(`${BACKEND_URL}/api/v1/user/plans/myPlans`, {
-        headers: { token },
+        headers: { token }
       });
-      console.log("Fetched plans:", res.data);
-      // You should lift state up and handle plan setting in the parent component.
+      
+      if (res.data.success) {
+        setUserPlans(res.data.data || []);
+      }
     } catch (err) {
-      console.error("Error fetching plans:", err);
+      setUserPlans([]);
     } finally {
       setLoadingPlans(false);
+    }
+  };
+
+  const handlePlanSelect = (plan: any) => {
+    dispatch(setSelectedPlan(plan));
+    setCurrentMenu("planDetails");
+    setSelectedFunctionality("notices"); // Default to notices
+  };
+
+  const handleBackToMain = () => {
+    dispatch(clearSelectedPlan());
+    setCurrentMenu("main");
+    setSelectedFunctionality("");
+  };
+
+  const handleBackToPlans = () => {
+    dispatch(clearSelectedPlan());
+    setCurrentMenu("My Plans");
+    setSelectedFunctionality("");
+  };
+
+  const handleItemClick = (item: any) => {
+    if (item.onClick) {
+      item.onClick();
     }
   };
 
@@ -77,11 +111,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         {/* Header or Back */}
         <div className="px-4 py-3 text-xl border-b text-center text-teal-500 border-gray-600 font-bold">
-          {(selectedPlan || currentMenu !== "main") ? (
-            <button onClick={() => {
-              if (selectedPlan) setSelectedPlan(null);
-              setCurrentMenu("main");
-            }} className="hover:underline">
+          {selectedPlan ? (
+            <div className="space-y-2">
+              <div className="text-sm font-normal text-white">
+                {selectedPlan.messId?.messName}
+              </div>
+              <button 
+                onClick={handleBackToPlans}
+                className="text-xs hover:underline text-teal-300"
+              >
+                ← Back to Plans
+              </button>
+            </div>
+          ) : currentMenu !== "main" ? (
+            <button onClick={handleBackToMain} className="hover:underline">
               ← Back
             </button>
           ) : (
@@ -91,16 +134,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Content */}
         <div className="flex flex-col justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-[calc(100%-3.5rem)] gap-y-2">
-          {/* Plan Features */}
-          {currentMenu === "planFeatures" && selectedPlan &&
-            planFeatures.map((feature) => (
-              <div
-                key={feature}
-                className="px-2 py-2 text-center hover:bg-gray-600 rounded"
-              >
-                {feature}
-              </div>
-            ))}
+          {/* Functionality Buttons - when plan is selected */}
+          {selectedPlan && currentMenu === "planDetails" && (
+            <div className="space-y-2">
+              {functionalityButtons.map((func) => (
+                <button
+                  key={func.id}
+                  onClick={() => setSelectedFunctionality(func.id)}
+                  className={`w-full text-center px-2 py-2 rounded transition-colors ${
+                    selectedFunctionality === func.id
+                      ? "bg-teal-600 text-white"
+                      : "hover:bg-gray-600 text-gray-200"
+                  }`}
+                >
+                  {func.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* My Plans List */}
           {currentMenu === "My Plans" && !selectedPlan && (
@@ -110,13 +161,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               userPlans.map((plan: any) => (
                 <button
                   key={plan._id}
-                  onClick={() => {
-                    setSelectedPlan(plan);
-                    setCurrentMenu("planFeatures");
-                  }}
-                  className="px-2 py-2 hover:bg-gray-600 rounded text-center"
+                  onClick={() => handlePlanSelect(plan)}
+                  className="px-2 py-2 hover:bg-gray-600 rounded text-center w-full"
                 >
-                  {plan.messId?.messName || "Unknown Mess"} - {plan.planId?.name}
+                  {plan.messId?.messName || "Unknown Mess"}
                 </button>
               ))
             ) : (
@@ -132,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() =>
                   item.label === "My Plans"
                     ? handleMyPlansClick()
-                    : console.log(`${item.label} clicked`)
+                    : handleItemClick(item)
                 }
                 className="w-full text-center  px-2 py-2 hover:bg-gray-700 rounded"
               >

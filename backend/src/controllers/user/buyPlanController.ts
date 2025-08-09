@@ -7,7 +7,11 @@ import { buyPlanService } from "../../services/user/buyPlanService";
 const router = Router();
 router.post("/buyPlan",userMiddleware, async function (req: Request, res: Response) {
     try {
-        const userId = req.body.UserId;
+        const userId = req.user?.id;
+        if (!userId) {
+            new ApiResponse(res).error("User ID not found");
+            return;
+        }
         const planId = req.body.planId;
         const buyPlan = await buyPlanService.buyPlan(userId, planId);
         new ApiResponse(res).success(buyPlan, "Plan purchased successfully");
