@@ -75,7 +75,7 @@ export const NearbyMessDetail = () => {
     }
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `${BACKEND_URL}/api/v1/user/buyPlan/buyPlan`,
         { planId: plan._id },
         {

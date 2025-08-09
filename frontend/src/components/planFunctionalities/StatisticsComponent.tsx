@@ -13,6 +13,18 @@ export const StatisticsComponent: React.FC = () => {
     );
   }
 
+  // Safely compute monthly paused days summary whether it's a number or an array of { month, noofDaysinMonth, pauseEntries }
+  const monthlyPausedSummary: number = (() => {
+    const monthly = (selectedPlan as any)?.monthlyPausedDays;
+    if (Array.isArray(monthly)) {
+      return monthly.reduce((sum: number, m: any) => sum + (m?.noofDaysinMonth || 0), 0);
+    }
+    if (typeof monthly === 'number') return monthly;
+    return 0;
+  })();
+
+  const totalPausedDays = (selectedPlan as any)?.totalPaused || 0;
+
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold text-gray-800">Plan Statistics</h3>
@@ -39,8 +51,8 @@ export const StatisticsComponent: React.FC = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h4 className="font-semibold text-gray-900 mb-2">Pause Statistics</h4>
           <div className="space-y-2 text-sm">
-            <p><span className="font-medium">Total Paused Days:</span> {selectedPlan.totalPaused || 0}</p>
-            <p><span className="font-medium">Monthly Paused Days:</span> {selectedPlan.monthlyPausedDays || 0}</p>
+            <p><span className="font-medium">Total Paused Days:</span> {totalPausedDays}</p>
+            <p><span className="font-medium">Monthly Paused Days:</span> {monthlyPausedSummary}</p>
             <p><span className="font-medium">Currently Paused:</span> {selectedPlan.isPaused ? 'Yes' : 'No'}</p>
           </div>
         </div>
