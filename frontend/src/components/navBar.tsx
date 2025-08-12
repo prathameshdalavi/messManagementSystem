@@ -12,9 +12,9 @@ export const NavBar = () => {
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold">M</span>
+              <span className="text-white font-bold">KC</span>
             </div>
-            <span className="text-2xl font-bold text-teal-600">MessMate</span>
+            <span className="text-2xl font-bold text-teal-600">KhaanaCloud</span>
           </div>
 
           <button onClick={handleSignIn} className="bg-teal-500 cursor-pointer text-white px-6 py-2 rounded-lg font-medium hover:bg-teal-600 transition-colors shadow-md">

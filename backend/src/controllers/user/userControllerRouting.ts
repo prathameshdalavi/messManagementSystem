@@ -8,6 +8,8 @@ import attendanceRouter from "./attendanceController";
 import myPlanRouter from "./myPlansController";
 import pauseResumeRouter from "./PauseresumeController";
 import noticeRouter from "./noticeController";
+import profileRouter from "./profile";
+import settingRouter from "./settingController"; // Importing settings controller
 const userRouter = Router();
 
 userRouter.use("/auth", authRouter);
@@ -19,4 +21,6 @@ userRouter.use("/buyPlan", buyPlanRouter);
 userRouter.use("/pauseResume",pauseResumeRouter);
 userRouter.use("/attendance",attendanceRouter);
 userRouter.use("/notice", noticeRouter);
+userRouter.use("/profile",profileRouter);
+userRouter.use("/settings",settingRouter); // Importing settings controller
 export default userRouter;

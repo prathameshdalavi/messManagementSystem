@@ -4,6 +4,7 @@ import axios from "axios";
 import { BACKEND_URL } from "../config";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectedPlan, clearSelectedPlan, selectSelectedPlan } from "../redux/nearbyMessSlice";
+import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
   opensidebar: boolean;
@@ -85,9 +86,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setSelectedFunctionality("");
   };
 
+  const navigate = useNavigate();
+
   const handleItemClick = (item: any) => {
-    if (item.onClick) {
-      item.onClick();
+    if (item.label === "Home") {
+      navigate("/home"); // This will only change the Outlet content
+    } 
+    else if (item.label === "My Plans") {
+      handleMyPlansClick();
+    } 
+    else if (item.label === "Profile") {
+      navigate("/profile"); // Example future page
+    }
+    else if (item.label === "Settings") {
+      navigate("/settings"); // Example future page
+    }
+    else if (item.label === "Logout") {
+      navigate("/logout"); // Example future page
     }
   };
 
@@ -110,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {/* Header or Back */}
-        <div className="px-4 py-3 text-xl border-b text-center text-teal-500 border-gray-600 font-bold">
+        <div className="px-4 py-3 text-xl border-bzzz text-center text-teal-500 border-gray-600 font-bold">
           {selectedPlan ? (
             <div className="space-y-2">
               <div className="text-sm font-normal text-white">
@@ -133,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex flex-col justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-[calc(100%-3.5rem)] gap-y-2">
+        <div className="flex flex-col justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-[calc(100%-3.5rem)] gap-y-25">
           {/* Functionality Buttons - when plan is selected */}
           {selectedPlan && currentMenu === "planDetails" && (
             <div className="space-y-2">
