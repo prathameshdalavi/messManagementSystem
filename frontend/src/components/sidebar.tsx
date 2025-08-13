@@ -148,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <button
                 onClick={handleBackToPlans}
-                className="text-xs hover:underline text-teal-300"
+                className="text-xs hover:underline cursor-pointer text-teal-300"
               >
                 ← Back to Plans
               </button>
@@ -163,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex flex-col   justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-[calc(100%-3.5rem)] gap-y-25">
+        <div className="flex flex-col    justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-[calc(100%-3.5rem)] gap-y-25">
           {/* Functionality Buttons - when plan is selected */}
           {selectedPlan && currentMenu === "planDetails" && (
             <div className="space-y-12 ">
@@ -171,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={func.id}
                   onClick={() => setSelectedFunctionality(func.id)}
-                  className={`w-full text-center  px-2 py-2 rounded transition-colors ${selectedFunctionality === func.id
+                  className={`w-full text-center cursor-pointer  px-2 py-2 rounded transition-colors ${selectedFunctionality === func.id
                       ? "bg-teal-600 text-white"
                       : "hover:bg-gray-600 text-gray-200"
                     }`}
@@ -191,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={plan._id}
                   onClick={() => handlePlanSelect(plan)}
-                  className="px-2 py-2 hover:bg-gray-600 rounded text-center w-full"
+                  className="px-2 py-2 cursor-pointer hover:bg-gray-600 rounded text-center w-full"
                 >
                   {plan.messId?.messName || "Unknown Mess"}
                 </button>
@@ -211,7 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ? handleMyPlansClick()
                     : handleItemClick(item)
                 }
-                className="w-full text-center  px-2 py-2 hover:bg-gray-700 rounded"
+                className="w-full text-center cursor-pointer  px-2 py-2 hover:bg-gray-700 rounded"
               >
                 {item.label}
               </button>

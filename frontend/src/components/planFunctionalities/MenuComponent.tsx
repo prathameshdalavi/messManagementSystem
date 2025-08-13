@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BACKEND_URL } from '../../config';
-import { FaUtensils } from 'react-icons/fa';
+import { FaUtensils, FaSync } from 'react-icons/fa';
+import { IoFastFoodOutline } from 'react-icons/io5';
 import { useSelector } from 'react-redux';
 import { selectSelectedPlan } from '../../redux/nearbyMessSlice';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Meal {
   breakfast: string[];
@@ -18,22 +20,23 @@ interface MenuItem {
 }
 
 export const MenuComponent: React.FC = () => {
-  const [menu, setMenu] = useState<any>(null);
+  const [menu, setMenu] = useState<MenuItem[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeDay, setActiveDay] = useState<string | null>(null);
 
   const selectedPlan = useSelector(selectSelectedPlan);
   const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
   useEffect(() => {
     if (selectedPlan) {
       fetchMenu();
+      setActiveDay(today);
     }
   }, [selectedPlan]);
 
   const fetchMenu = async () => {
-    if (!selectedPlan?.messId?._id) {
-      return;
-    }
+    if (!selectedPlan?.messId?._id) return;
     
     setLoading(true);
     try {
@@ -44,74 +47,131 @@ export const MenuComponent: React.FC = () => {
       if (response.data.success) {
         setMenu(response.data.data.menu);
       } else {
-        setMenu([]);
+        setMenu(null);
       }
-    } catch (error: any) {
-      setMenu([]);
+    } catch (error) {
+      setMenu(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const mealIcons = {
+    breakfast: '☕',
+    lunch: '🍽️',
+    snacks: '🍎',
+    dinner: '🌙'
+  };
 
   return (
     <div className="space-y-6">
-      <h3 className="text-2xl font-bold text-gray-800 mb-6">Weekly Menu</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <IoFastFoodOutline className="text-teal-500 text-2xl" />
+          Weekly Menu
+        </h3>
+        <button 
+          onClick={fetchMenu}
+          className="text-sm text-teal-600 hover:text-teal-800 transition-colors flex items-center gap-1"
+          disabled={loading}
+        >
+          <FaSync className={`text-sm ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
 
       {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
-          <p className="text-gray-600 mt-2">Loading menu...</p>
+        <div className="space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-16 w-full rounded-lg bg-gray-100 animate-pulse" />
+          ))}
         </div>
-      ) : menu && menu.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-300 text-sm text-left">
-            <thead className="bg-teal-600 text-white">
-              <tr>
-                <th className="p-2 border border-gray-300">Meal / Day</th>
-                {daysOfWeek.map((day) => (
-                  <th
-                    key={day}
-                    className={`p-2 border border-gray-300 text-center ${
-                      day === today ? 'bg-teal-800' : ''
-                    }`}
-                  >
-                    {day}
-                    {day === today && <div className="text-xs font-normal">(Today)</div>}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {["breakfast", "lunch", "snacks", "dinner"].map((mealType) => (
-                <tr key={mealType}>
-                  <td className="p-2 border font-medium bg-gray-100 capitalize">
-                    {mealType}
-                  </td>
-                  {daysOfWeek.map((day) => {
-                    const dayMenu = menu.find((item: MenuItem) => item.day === day);
-                    return (
-                      <td
-                        key={day}
-                        className={`p-2 border text-gray-700 ${
-                          day === today ? 'bg-yellow-50 border-yellow-200' : ''
-                        }`}
-                      >
-                        {dayMenu?.meals[mealType as keyof Meal]?.join(", ") || "-"}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      ) : menu ? (
+        <div className="space-y-6">
+          {/* Day Selector */}
+          <div className="flex overflow-x-auto pb-2 gap-1">
+            {daysOfWeek.map((day) => (
+              <button
+                key={day}
+                onClick={() => setActiveDay(day)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeDay === day
+                    ? 'bg-teal-600 text-white'
+                    : day === today
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {day}
+                {day === today && <span className="ml-1">• Today</span>}
+              </button>
+            ))}
+          </div>
+
+          {/* Menu Cards */}
+          <AnimatePresence mode="wait">
+            {activeDay && menu.find((item) => item.day === activeDay) && (
+              <motion.div
+                key={activeDay}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                {Object.entries(mealIcons).map(([mealType, icon]) => {
+                  const dayMenu = menu.find((item) => item.day === activeDay);
+                  const items = dayMenu?.meals[mealType as keyof Meal] || [];
+                  
+                  return (
+                    <div key={mealType} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-teal-50 p-2 rounded-lg">
+                          <span className="text-xl">{icon}</span>
+                        </div>
+                        <h4 className="font-semibold text-gray-800 capitalize">
+                          {mealType}
+                        </h4>
+                      </div>
+                      {items.length > 0 ? (
+                        <ul className="space-y-2 pl-2">
+                          {items.map((item, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                              <span className="text-teal-500 mt-1">•</span>
+                              <span className="text-gray-700">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-gray-400 pl-2">No items listed</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500">
-          <FaUtensils className="mx-auto text-4xl text-gray-300 mb-4" />
-          <p>No menu available for this mess</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12"
+        >
+          <div className="bg-gray-50 p-6 rounded-full inline-block mb-4">
+            <FaUtensils className="mx-auto text-4xl text-gray-300" />
+          </div>
+          <h4 className="text-lg font-medium text-gray-600 mb-2">No menu available</h4>
+          <p className="text-gray-400 max-w-md mx-auto">
+            The mess hasn't shared their weekly menu yet. Please check back later.
+          </p>
+          <button
+            onClick={fetchMenu}
+            className="mt-4 text-sm text-teal-600 hover:text-teal-800 font-medium transition-colors"
+          >
+            Check again
+          </button>
+        </motion.div>
       )}
     </div>
   );

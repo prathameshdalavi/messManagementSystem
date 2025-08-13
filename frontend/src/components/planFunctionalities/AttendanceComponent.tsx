@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { BACKEND_URL } from '../../config';
-import { FaCalendarAlt, FaCamera, FaTimes } from 'react-icons/fa';
+import { FaCalendarAlt, FaCamera, FaTimes, FaQrcode, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { useSelector } from 'react-redux';
 import { selectSelectedPlan } from '../../redux/nearbyMessSlice';
 import { Html5Qrcode } from 'html5-qrcode';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AttendanceComponent: React.FC = () => {
   const [attendance, setAttendance] = useState<any>(null);
@@ -50,7 +51,6 @@ export const AttendanceComponent: React.FC = () => {
   };
 
   const startScanner = async () => {
-    // 1. Check HTTPS or localhost
     const isSecure = window.isSecureContext ||
       window.location.protocol === 'https:' ||
       window.location.hostname === 'localhost';
@@ -64,27 +64,22 @@ export const AttendanceComponent: React.FC = () => {
     setMessage(null);
 
     try {
-      // 2. Stop any previous scanner
       if (html5qrcodeRef.current) {
         try { await html5qrcodeRef.current.stop(); } catch {}
         try { await html5qrcodeRef.current.clear(); } catch {}
         html5qrcodeRef.current = null;
       }
 
-      // 3. Create scanner instance
       html5qrcodeRef.current = new Html5Qrcode('qr-reader', { verbose: false });
 
-      // 4. Get list of cameras
       const devices = await Html5Qrcode.getCameras();
       if (!devices || devices.length === 0) {
         throw new Error("No camera found on this device.");
       }
 
-      // 5. Prefer back camera if available
       const backCam = devices.find(d => /back|rear|environment/i.test(d.label));
       const cameraId = backCam ? backCam.id : devices[0].id;
 
-      // 6. Start scanning
       const config: any = { fps: 10, qrbox: { width: 250, height: 250 } };
       await html5qrcodeRef.current.start(
         cameraId,
@@ -151,17 +146,33 @@ export const AttendanceComponent: React.FC = () => {
       }
     } catch (error: any) {
       setMessage({ type: 'error', text: error?.response?.data?.message || 'Failed to mark attendance' });
-    } finally {
     }
   };
 
   const clearMessage = () => setMessage(null);
 
+  const renderStatCard = (title: string, value: number, color: string, icon: React.ReactNode) => (
+    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500">{title}</p>
+          <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
+        </div>
+        <div className={`p-3 rounded-full ${color.replace('text', 'bg').replace('-600', '-100')}`}>
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-xl font-bold text-gray-800">Attendance Records</h3>
+          <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <FaCalendarAlt className="text-teal-500" />
+            Attendance Records
+          </h3>
           {selectedPlan?.messId?.messName && (
             <p className="text-sm text-gray-600 mt-1">Mess: {selectedPlan.messId.messName}</p>
           )}
@@ -169,129 +180,194 @@ export const AttendanceComponent: React.FC = () => {
         <button
           onClick={startScanner}
           disabled={showScanner}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          className="bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
         >
-          <FaCamera />
+          <FaQrcode />
           Scan QR
         </button>
       </div>
 
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`p-4 rounded-lg flex items-center justify-between ${
+              message.type === 'success'
+                ? 'bg-green-50 border border-green-200 text-green-700'
+                : 'bg-red-50 border border-red-200 text-red-700'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {message.type === 'success' ? (
+                <FaCheckCircle className="text-green-500" />
+              ) : (
+                <FaTimesCircle className="text-red-500" />
+              )}
+              <span>{message.text}</span>
+            </div>
+            <button onClick={clearMessage} className="text-gray-400 hover:text-gray-600">
+              <FaTimes />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {showScanner && (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"
+        >
           <div className="flex justify-between items-center mb-4">
-            <h4 className="text-lg font-semibold text-gray-800">Scan QR Code</h4>
-            <button onClick={stopScanner} className="text-red-600 hover:text-red-700">
+            <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <FaCamera className="text-teal-500" />
+              Scan QR Code
+            </h4>
+            <button onClick={stopScanner} className="text-gray-400 hover:text-gray-600">
               <FaTimes size={20} />
             </button>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Attendance Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Meal Type</label>
             <select
               value={attendanceType}
               onChange={(e) => setAttendanceType(e.target.value as 'breakfast' | 'lunch' | 'dinner')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="breakfast">Breakfast</option>
               <option value="lunch">Lunch</option>
               <option value="dinner">Dinner</option>
             </select>
           </div>
-          <div id="qr-reader" className="w-full max-w-md mx-auto" />
+          <div id="qr-reader" className="w-full max-w-md mx-auto rounded-lg overflow-hidden" />
           {scanning && (
             <div className="text-center mt-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto" />
               <p className="text-gray-600 mt-2">Scanning for QR code...</p>
             </div>
           )}
-        </div>
-      )}
-
-      {message && (
-        <div className={`p-4 rounded-lg ${message.type === 'success'
-          ? 'bg-green-100 border border-green-400 text-green-700'
-          : 'bg-red-100 border border-red-400 text-red-700'}`}>
-          <div className="flex justify-between items-center">
-            <span>{message.text}</span>
-            <button onClick={clearMessage} className="text-gray-500 hover:text-gray-700">
-              <FaTimes />
-            </button>
-          </div>
-        </div>
+        </motion.div>
       )}
 
       {!selectedPlan?.messId?._id ? (
-        <div className="text-center py-8 text-gray-500">
-          <FaCalendarAlt className="mx-auto text-4xl text-gray-300 mb-4" />
-          <p>Please select a plan to view attendance records</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200"
+        >
+          <div className="bg-gray-50 p-6 rounded-full inline-block mb-4">
+            <FaCalendarAlt className="mx-auto text-4xl text-gray-300" />
+          </div>
+          <h4 className="text-lg font-medium text-gray-600 mb-2">No Plan Selected</h4>
+          <p className="text-gray-400 max-w-md mx-auto">
+            Please select a mess plan from the sidebar to view attendance records.
+          </p>
+        </motion.div>
       ) : attendance ? (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          {/* Present counts */}
-          <div className="space-y-4">
-            <h4 className="font-semibold text-gray-900 mb-3">Present Counts</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Lunch Present</span>
-                <span className="text-2xl font-bold text-green-600">{attendance.getLunchAttendanceCount || 0}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Breakfast Present</span>
-                <span className="text-2xl font-bold text-blue-600">{attendance.getBreakfastAttendanceCount || 0}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Dinner Present</span>
-                <span className="text-2xl font-bold text-purple-600">{attendance.getDinnerAttendanceCount || 0}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Total Days</span>
-                <span className="text-2xl font-bold text-orange-600">{attendance.totalDays || 0}</span>
-              </div>
+        <div className="space-y-6">
+          {/* Present Stats */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Present Counts</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {renderStatCard(
+                'Lunch Present',
+                attendance.getLunchAttendanceCount || 0,
+                'text-green-600',
+                <FaCheckCircle className="text-green-500" />
+              )}
+              {renderStatCard(
+                'Breakfast Present',
+                attendance.getBreakfastAttendanceCount || 0,
+                'text-blue-600',
+                <FaCheckCircle className="text-blue-500" />
+              )}
+              {renderStatCard(
+                'Dinner Present',
+                attendance.getDinnerAttendanceCount || 0,
+                'text-purple-600',
+                <FaCheckCircle className="text-purple-500" />
+              )}
+              {renderStatCard(
+                'Total Days',
+                attendance.totalDays || 0,
+                'text-teal-600',
+                <FaCalendarAlt className="text-teal-500" />
+              )}
             </div>
           </div>
 
-          {/* Absence summary */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h4 className="font-semibold text-gray-900 mb-3">Absence Summary</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Lunch Absent</span>
-                <span className="text-2xl font-bold text-red-600">{attendance.getLunchAbsentyCount || 0}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Breakfast Absent</span>
-                <span className="text-2xl font-bold text-red-600">{attendance.getBreakfastAbsentyCount || 0}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Dinner Absent</span>
-                <span className="text-2xl font-bold text-red-600">{attendance.getDinnerAbsentyCount || 0}</span>
-              </div>
+          {/* Absent Stats */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Absent Counts</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {renderStatCard(
+                'Lunch Absent',
+                attendance.getLunchAbsentyCount || 0,
+                'text-red-600',
+                <FaTimesCircle className="text-red-500" />
+              )}
+              {renderStatCard(
+                'Breakfast Absent',
+                attendance.getBreakfastAbsentyCount || 0,
+                'text-red-600',
+                <FaTimesCircle className="text-red-500" />
+              )}
+              {renderStatCard(
+                'Dinner Absent',
+                attendance.getDinnerAbsentyCount || 0,
+                'text-red-600',
+                <FaTimesCircle className="text-red-500" />
+              )}
             </div>
           </div>
 
-          {/* Percentages */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h4 className="font-semibold text-gray-900 mb-3">Attendance Percentages</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Lunch Attendance</span>
-                <span className="text-2xl font-bold text-green-600">{attendance.lunchAttendancePercentage || 0}%</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Breakfast Attendance</span>
-                <span className="text-2xl font-bold text-blue-600">{attendance.breakfastAttendancePercentage || 0}%</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-600">Dinner Attendance</span>
-                <span className="text-2xl font-bold text-purple-600">{attendance.dinnerAttendancePercentage || 0}%</span>
-              </div>
+          {/* Percentage Stats */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Attendance Percentages</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {renderStatCard(
+                'Lunch Attendance',
+                attendance.lunchAttendancePercentage || 0,
+                'text-green-600',
+                <span className="font-bold">%</span>
+              )}
+              {renderStatCard(
+                'Breakfast Attendance',
+                attendance.breakfastAttendancePercentage || 0,
+                'text-blue-600',
+                <span className="font-bold">%</span>
+              )}
+              {renderStatCard(
+                'Dinner Attendance',
+                attendance.dinnerAttendancePercentage || 0,
+                'text-purple-600',
+                <span className="font-bold">%</span>
+              )}
             </div>
           </div>
         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500">
-          <FaCalendarAlt className="mx-auto text-4xl text-gray-300 mb-4" />
-          <p>No attendance records available for this plan</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200"
+        >
+          <div className="bg-gray-50 p-6 rounded-full inline-block mb-4">
+            <FaCalendarAlt className="mx-auto text-4xl text-gray-300" />
+          </div>
+          <h4 className="text-lg font-medium text-gray-600 mb-2">No Records Found</h4>
+          <p className="text-gray-400 max-w-md mx-auto">
+            No attendance records available for this plan yet.
+          </p>
+          <button
+            onClick={fetchAttendance}
+            className="mt-4 text-sm text-teal-600 hover:text-teal-800 font-medium transition-colors"
+          >
+            Refresh Records
+          </button>
+        </motion.div>
       )}
     </div>
   );

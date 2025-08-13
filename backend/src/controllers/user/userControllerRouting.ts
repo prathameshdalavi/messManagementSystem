@@ -7,6 +7,7 @@ import buyPlanRouter from "./buyPlanController";
 import attendanceRouter from "./attendanceController";
 import myPlanRouter from "./myPlansController";
 import pauseResumeRouter from "./PauseresumeController";
+import feedbackRouter from "./feedbackController";
 import noticeRouter from "./noticeController";
 import profileRouter from "./profile";
 import settingRouter from "./settingController"; // Importing settings controller
@@ -17,6 +18,7 @@ userRouter.use("/messes", messRouter);
 userRouter.use("/menu", menuRouter); 
 userRouter.use("/plan",planRouter); 
 userRouter.use("/plans",myPlanRouter);
+userRouter.use("/feedback", feedbackRouter);
 userRouter.use("/buyPlan", buyPlanRouter);
 userRouter.use("/pauseResume",pauseResumeRouter);
 userRouter.use("/attendance",attendanceRouter);
