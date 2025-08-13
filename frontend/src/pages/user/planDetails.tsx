@@ -5,7 +5,7 @@ import { AttendanceComponent } from '../../components/planFunctionalities/Attend
 import { FeedbackComponent } from '../../components/planFunctionalities/FeedbackComponent';
 import { PauseResumeComponent } from '../../components/planFunctionalities/PauseResumeComponent';
 import { StatisticsComponent } from '../../components/planFunctionalities/StatisticsComponent';
-import { SettingsComponent } from '../../components/planFunctionalities/SettingsComponent';
+
 import { useSelector } from 'react-redux';
 import { selectSelectedPlan } from '../../redux/nearbyMessSlice';
 
@@ -31,8 +31,7 @@ export const PlanDetails: React.FC<PlanDetailsProps> = ({ selectedFunctionality 
         return <PauseResumeComponent />;
       case 'stats':
         return <StatisticsComponent />;
-      case 'settings':
-        return <SettingsComponent />;
+      
       default:
         return <NoticesComponent />;
     }

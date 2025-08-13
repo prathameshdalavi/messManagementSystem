@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { User,  Shield, Phone, Mail,  MapPin } from "lucide-react";
+import { User, Shield, Phone, Mail, MapPin } from "lucide-react";
 import { BACKEND_URL } from "../../config";
 
 interface UserSettings {
@@ -22,26 +22,48 @@ export default function SettingsPage() {
   });
   const [editField, setEditField] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [signedIn, setSignedIn] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
 
+
   useEffect(() => {
+    const token = localStorage.getItem("token");
+
+
+    if (!token) {
+      setSignedIn(false);
+      setLoading(false);
+      return;
+    }
     axios
       .get(`${BACKEND_URL}/api/v1/user/settings/getuser`, {
         headers: { token: localStorage.getItem("token") },
       })
       .then((res) => {
-        setUser(res.data.data);
-        setFormData({
-          name: res.data.name || "",
-          email: res.data.email || "",
-          password: "",
-          phone: res.data.phone || "",
-          hostelAddress: res.data.hostelAddress || "",
-        });
+        if (res.data.success) {
+          setUser(res.data.data);
+          setFormData({
+            name: res.data.name || "",
+            email: res.data.email || "",
+            password: "",
+            phone: res.data.phone || "",
+            hostelAddress: res.data.hostelAddress || "",
+          });
+        }
+        else{
+          setSignedIn(false);
+        }
       })
       .catch((err) => console.error("API Error:", err));
   }, []);
-
+  if (!signedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen text-center">
+        <h1 className="text-3xl font-bold text-teal-500">You are not signed in</h1>
+        <p className="text-gray-600 mt-2">Please sign in to access your settings.</p>
+      </div>
+    );
+  }
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -49,21 +71,21 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      
+
       const updateData: Partial<UserSettings> = {};
       if (editField) {
         updateData[editField as keyof UserSettings] = (formData as any)[editField];
       }
-      
+
       await axios.put(`${BACKEND_URL}/api/v1/user/settings/settings`, updateData, {
         headers: { token: localStorage.getItem("token") },
       });
-      
+
       if (user && editField) {
         const updatedUser = { ...user, [editField]: (formData as any)[editField] };
         setUser(updatedUser);
       }
-      
+
       setEditField(null);
       setLoading(false);
     } catch (err) {
@@ -89,7 +111,7 @@ export default function SettingsPage() {
   const renderField = (label: string, key: keyof UserSettings, icon: React.ReactNode, placeholder?: string) => {
     const isEditing = editField === key;
     const displayValue = key === "password" ? "••••••••" : (user as any)?.[key] || "";
-    
+
     return (
       <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-100 last:border-0">
         <div className="flex items-center gap-3 mb-3 sm:mb-0">
@@ -103,7 +125,7 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
-        
+
         {isEditing ? (
           <div className="w-full sm:w-auto sm:min-w-[300px]">
             <div className="flex flex-col gap-3">

@@ -8,20 +8,38 @@ import { FiRotateCw } from "react-icons/fi";
 export const ProfilePage = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [signedIn, setSignedIn] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+
+    // ✅ No token → mark as not signed in
+    if (!token) {
+      setSignedIn(false);
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Token exists → fetch profile
     axios
       .get(`${BACKEND_URL}/api/v1/user/profile/profile`, { headers: { token } })
       .then((res) => {
         if (res.data.success) {
           setProfile(res.data.data);
+          setSignedIn(true);
+        } else {
+          setSignedIn(false);
         }
+      })
+      .catch((err) => {
+        console.error(err);
+        setSignedIn(false);
       })
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading)
+  // Loading state
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <motion.div
@@ -33,17 +51,32 @@ export const ProfilePage = () => {
         </motion.div>
       </div>
     );
-    
-  if (!profile)
+  }
+
+  // ✅ Show not signed in message
+  if (!signedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen text-center">
+        <h1 className="text-3xl font-bold text-teal-500">You are not signed in</h1>
+        <p className="text-gray-600 mt-2">Please sign in to view your profile.</p>
+      </div>
+    );
+  }
+
+  // ✅ Show error if no profile data (but user is signed in)
+  if (!profile) {
     return (
       <div className="text-center mt-10 text-red-500 font-semibold">
         No profile data found.
       </div>
     );
+  }
 
   const { user, messHistory } = profile;
-  const activePlan = messHistory.find((p: any) => p.isActive);
-  const pastPlans = messHistory.filter((p: any) => !p.isActive);
+  // Handle case where messHistory might be undefined or empty
+  const plans = messHistory || [];
+  const activePlan = plans.find((p: any) => p.isActive);
+  const pastPlans = plans.filter((p: any) => !p.isActive);
 
   return (
     <motion.div
@@ -75,9 +108,9 @@ export const ProfilePage = () => {
               <FaUser className="text-teal-500" /> Basic Information
             </h2>
             <div className="grid gap-4 text-gray-700">
-              <InfoItem icon={<FaUser />} label="Name" value={user.name} />
-              <InfoItem icon={<FaEnvelope />} label="Email" value={user.email} />
-              <InfoItem icon={<FaPhone />} label="Phone" value={user.phone} />
+              <InfoItem icon={<FaUser />} label="Name" value={user.name || "Not specified"} />
+              <InfoItem icon={<FaEnvelope />} label="Email" value={user.email || "Not specified"} />
+              <InfoItem icon={<FaPhone />} label="Phone" value={user.phone || "Not specified"} />
               <InfoItem 
                 icon={<FaPhone />} 
                 label="Hostel Address" 
@@ -100,8 +133,8 @@ export const ProfilePage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
               >
-                <PlanInfo label="Mess" value={activePlan.messId?.messName} />
-                <PlanInfo label="Plan" value={activePlan.planId?.name} />
+                <PlanInfo label="Mess" value={activePlan.messId?.messName || "Not specified"} />
+                <PlanInfo label="Plan" value={activePlan.planId?.name || "Not specified"} />
                 <PlanInfo 
                   label="Start" 
                   value={new Date(activePlan.purchaseDate).toLocaleDateString()} 
@@ -118,12 +151,16 @@ export const ProfilePage = () => {
               </motion.div>
             ) : (
               <motion.div 
-                className="text-gray-500 italic py-4"
+                className="text-center py-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                No active plan
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <FaUtensils className="text-gray-400 text-3xl mx-auto mb-3" />
+                  <p className="text-gray-500 font-medium">No Active Plan</p>
+                  <p className="text-gray-400 text-sm mt-1">You don't have any active mess plan currently</p>
+                </div>
               </motion.div>
             )}
           </div>
@@ -131,23 +168,36 @@ export const ProfilePage = () => {
       </div>
 
       {/* Past Plans Section */}
-      {pastPlans.length > 0 && (
-        <motion.div
-          className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <h2 className="text-xl font-semibold text-teal-600 mb-4 flex items-center gap-2 border-b pb-2">
-            <FaHistory className="text-teal-500" /> Past Plans
-          </h2>
+      <motion.div
+        className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <h2 className="text-xl font-semibold text-teal-600 mb-4 flex items-center gap-2 border-b pb-2">
+          <FaHistory className="text-teal-500" /> Past Plans
+        </h2>
+        {pastPlans.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             {pastPlans.map((plan: any, index: number) => (
               <PlanCard key={index} plan={plan} index={index} />
             ))}
           </div>
-        </motion.div>
-      )}
+        ) : (
+          <motion.div 
+            className="text-center py-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <FaHistory className="text-gray-400 text-3xl mx-auto mb-3" />
+              <p className="text-gray-500 font-medium">No Past Plans</p>
+              <p className="text-gray-400 text-sm mt-1">You haven't had any previous mess plans</p>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
     </motion.div>
   );
 };
@@ -190,9 +240,9 @@ const PlanCard = ({ plan, index }: { plan: any, index: number }) => (
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 + index * 0.1 }}
     >
-      <h3 className="font-semibold text-teal-600">{plan.messId?.messName}</h3>
+      <h3 className="font-semibold text-teal-600">{plan.messId?.messName || "Unknown Mess"}</h3>
       <div className="mt-2 space-y-1 text-sm">
-        <p><span className="font-medium">Plan:</span> {plan.planId?.name}</p>
+        <p><span className="font-medium">Plan:</span> {plan.planId?.name || "Unknown Plan"}</p>
         <p><span className="font-medium">Duration:</span> {new Date(plan.purchaseDate).toLocaleDateString()} - {new Date(plan.expiryDate).toLocaleDateString()}</p>
         <div className="flex items-center gap-2 pt-1">
           <span className="font-medium">Status:</span>

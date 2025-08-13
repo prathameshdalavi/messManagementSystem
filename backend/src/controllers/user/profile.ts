@@ -6,12 +6,12 @@ import { userMiddleware } from "../../middlewares/user/userMiddleware";
 
 
 const router = Router();
-router.get("/profile",userMiddleware, async (req: Request, res: Response) => {
+router.get("/profile", userMiddleware, async (req: Request, res: Response) => {
     try {
         const user_id = req.user?.id;
         if (!user_id) {
-             new ApiResponse(res).error("User ID not found");
-             return
+            new ApiResponse(res).error("User ID not found");
+            return;
         }
 
         const user = await profileService.getUserProfile(user_id);

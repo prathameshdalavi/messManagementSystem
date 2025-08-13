@@ -34,9 +34,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarItems = [
     { label: "Home", subItems: [] },
     { label: "My Plans", subItems: [] },
-    { label: "Profile", subItems: ["Edit", "Preferences"] },
-    { label: "Settings", subItems: ["Account", "Notifications", "Privacy"] },
-    { label: "Logout", subItems: [] },
+    { label: "Profile"},
+    { label: "Settings" },
+    { label: "Logout"},
   ];
 
   const functionalityButtons = [
@@ -46,7 +46,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "feedback", label: "Feedback" },
     { id: "pause", label: "Pause/Resume" },
     { id: "stats", label: "Statistics" },
-    { id: "settings", label: "Settings" },
   ];
 
   const handleMyPlansClick = async () => {
@@ -57,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       const res = await axios.get(`${BACKEND_URL}/api/v1/user/plans/myPlans`, {
         headers: { token }
       });
-      
+
       if (res.data.success) {
         setUserPlans(res.data.data || []);
       }
@@ -91,10 +90,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleItemClick = (item: any) => {
     if (item.label === "Home") {
       navigate("/home"); // This will only change the Outlet content
-    } 
+    }
     else if (item.label === "My Plans") {
       handleMyPlansClick();
-    } 
+    }
     else if (item.label === "Profile") {
       navigate("/profile"); // Example future page
     }
@@ -102,8 +101,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
       navigate("/settings"); // Example future page
     }
     else if (item.label === "Logout") {
-      navigate("/logout"); // Example future page
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("You are already logged out!");
+        return;
+      }
+
+      // Remove token from localStorage
+      localStorage.removeItem("token");
+
+      // Optional: Clear Redux state
+      dispatch(clearSelectedPlan());
+      setUserPlans([]);
+      setCurrentMenu("main");
+      setSelectedFunctionality("");
+
+      alert("Logged out successfully!");
+      navigate("/home");
     }
+
   };
 
   return (
@@ -111,18 +128,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Toggle Button */}
       <button
         onClick={toggleSidebar}
-        className={`fixed z-40 top-20 p-2 m-0.5 rounded-md bg-[#2F3349] text-white transition-all duration-300 ${
-          opensidebar ? "left-[16rem]" : "left-2"
-        }`}
+        className={`fixed z-40 top-20 p-2 m-0.5 rounded-md bg-[#2F3349] text-white transition-all duration-300 ${opensidebar ? "left-[16rem]" : "left-2"
+          }`}
       >
         {opensidebar ? "✕" : "☰"}
       </button>
 
       {/* Sidebar Panel */}
       <div
-        className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-[#2F3349] text-white transition-all duration-300 z-30 overflow-hidden ${
-          opensidebar ? "w-64" : "w-0"
-        }`}
+        className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-[#2F3349] text-white transition-all duration-300 z-30 overflow-hidden ${opensidebar ? "w-64" : "w-0"
+          }`}
       >
         {/* Header or Back */}
         <div className="px-4 py-3 text-xl border-bzzz text-center text-teal-500 border-gray-600 font-bold">
@@ -131,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="text-sm font-normal text-white">
                 {selectedPlan.messId?.messName}
               </div>
-              <button 
+              <button
                 onClick={handleBackToPlans}
                 className="text-xs hover:underline text-teal-300"
               >
@@ -148,19 +163,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex flex-col justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-[calc(100%-3.5rem)] gap-y-25">
+        <div className="flex flex-col   justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-[calc(100%-3.5rem)] gap-y-25">
           {/* Functionality Buttons - when plan is selected */}
           {selectedPlan && currentMenu === "planDetails" && (
-            <div className="space-y-2">
+            <div className="space-y-12 ">
               {functionalityButtons.map((func) => (
                 <button
                   key={func.id}
                   onClick={() => setSelectedFunctionality(func.id)}
-                  className={`w-full text-center px-2 py-2 rounded transition-colors ${
-                    selectedFunctionality === func.id
+                  className={`w-full text-center  px-2 py-2 rounded transition-colors ${selectedFunctionality === func.id
                       ? "bg-teal-600 text-white"
                       : "hover:bg-gray-600 text-gray-200"
-                  }`}
+                    }`}
                 >
                   {func.label}
                 </button>
