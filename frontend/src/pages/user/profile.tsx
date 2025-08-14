@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { BACKEND_URL } from "../../config";
-import { FaUser, FaEnvelope, FaPhone, FaUtensils, FaRegClock, FaHistory } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaPhone, FaUtensils, FaRegClock, FaHistory, FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { FiRotateCw } from "react-icons/fi";
 
@@ -9,24 +9,30 @@ export const ProfilePage = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [signedIn, setSignedIn] = useState(true);
+  const [activePlans, setActivePlans] = useState<any[]>([]);
+  const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    // ✅ No token → mark as not signed in
     if (!token) {
       setSignedIn(false);
       setLoading(false);
       return;
     }
 
-    // ✅ Token exists → fetch profile
+    // Fetch user profile
     axios
       .get(`${BACKEND_URL}/api/v1/user/profile/profile`, { headers: { token } })
       .then((res) => {
         if (res.data.success) {
           setProfile(res.data.data);
           setSignedIn(true);
+          
+          // Extract all active plans
+          const plans = res.data.data.messHistory || [];
+          const activePlans = plans.filter((p: any) => p.isActive);
+          setActivePlans(activePlans);
         } else {
           setSignedIn(false);
         }
@@ -38,7 +44,18 @@ export const ProfilePage = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // Loading state
+  const nextPlan = () => {
+    setCurrentPlanIndex((prevIndex) => 
+      prevIndex === activePlans.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const prevPlan = () => {
+    setCurrentPlanIndex((prevIndex) => 
+      prevIndex === 0 ? activePlans.length - 1 : prevIndex - 1
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -53,7 +70,6 @@ export const ProfilePage = () => {
     );
   }
 
-  // ✅ Show not signed in message
   if (!signedIn) {
     return (
       <div className="flex flex-col items-center justify-center h-screen text-center">
@@ -63,7 +79,6 @@ export const ProfilePage = () => {
     );
   }
 
-  // ✅ Show error if no profile data (but user is signed in)
   if (!profile) {
     return (
       <div className="text-center mt-10 text-red-500 font-semibold">
@@ -73,9 +88,7 @@ export const ProfilePage = () => {
   }
 
   const { user, messHistory } = profile;
-  // Handle case where messHistory might be undefined or empty
   const plans = messHistory || [];
-  const activePlan = plans.find((p: any) => p.isActive);
   const pastPlans = plans.filter((p: any) => !p.isActive);
 
   return (
@@ -120,35 +133,67 @@ export const ProfilePage = () => {
           </div>
         </TiltCard>
 
-        {/* Active Plan Card */}
+        {/* Active Plans Carousel */}
         <TiltCard>
           <div className="h-full bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
             <h2 className="text-xl font-semibold text-teal-600 mb-4 flex items-center gap-2 border-b pb-2">
-              <FaUtensils className="text-teal-500" /> Active Plan
+              <FaUtensils className="text-teal-500" /> Active Plans
             </h2>
-            {activePlan ? (
-              <motion.div
-                className="bg-gradient-to-br from-teal-50 to-white p-5 rounded-xl border border-teal-200 space-y-3 shadow-sm"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
-                <PlanInfo label="Mess" value={activePlan.messId?.messName || "Not specified"} />
-                <PlanInfo label="Plan" value={activePlan.planId?.name || "Not specified"} />
-                <PlanInfo 
-                  label="Start" 
-                  value={new Date(activePlan.purchaseDate).toLocaleDateString()} 
-                />
-                <PlanInfo 
-                  label="Expiry" 
-                  value={new Date(activePlan.expiryDate).toLocaleDateString()} 
-                />
-                <div className="flex items-center gap-2 pt-2">
-                  <FaRegClock className="text-teal-500" />
-                  <span className="font-medium">Status:</span>
-                  <StatusBadge isPaused={activePlan.isPaused} />
+            {activePlans.length > 0 ? (
+              <div className="relative h-full">
+                <div className="flex justify-between items-center mb-4">
+                  <button 
+                    onClick={prevPlan}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    disabled={activePlans.length <= 1}
+                  >
+                    <FaArrowLeft className="text-teal-500" />
+                  </button>
+                  <span className="text-sm text-gray-500">
+                    {currentPlanIndex + 1} / {activePlans.length}
+                  </span>
+                  <button 
+                    onClick={nextPlan}
+                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    disabled={activePlans.length <= 1}
+                  >
+                    <FaArrowRight className="text-teal-500" />
+                  </button>
                 </div>
-              </motion.div>
+                
+                <div className="relative h-64 overflow-hidden">
+                  {activePlans.map((plan, index) => (
+                    <motion.div
+                      key={index}
+                      className="absolute inset-0 bg-gradient-to-br from-teal-50 to-white p-5 rounded-xl border border-teal-200 space-y-3 shadow-sm"
+                      initial={{ rotateY: 0 }}
+                      animate={{
+                        rotateY: index === currentPlanIndex ? 0 : 180,
+                        opacity: index === currentPlanIndex ? 1 : 0,
+                        zIndex: index === currentPlanIndex ? 10 : 1
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      style={{ backfaceVisibility: "hidden" }}
+                    >
+                      <PlanInfo label="Mess" value={plan.messId?.messName || "Not specified"} />
+                      <PlanInfo label="Plan" value={plan.planId?.name || "Not specified"} />
+                      <PlanInfo 
+                        label="Start" 
+                        value={new Date(plan.purchaseDate).toLocaleDateString()} 
+                      />
+                      <PlanInfo 
+                        label="Expiry" 
+                        value={new Date(plan.expiryDate).toLocaleDateString()} 
+                      />
+                      <div className="flex items-center gap-2 pt-2">
+                        <FaRegClock className="text-teal-500" />
+                        <span className="font-medium">Status:</span>
+                        <StatusBadge isPaused={plan.isPaused} />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <motion.div 
                 className="text-center py-8"
@@ -158,8 +203,8 @@ export const ProfilePage = () => {
               >
                 <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
                   <FaUtensils className="text-gray-400 text-3xl mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">No Active Plan</p>
-                  <p className="text-gray-400 text-sm mt-1">You don't have any active mess plan currently</p>
+                  <p className="text-gray-500 font-medium">No Active Plans</p>
+                  <p className="text-gray-400 text-sm mt-1">You don't have any active mess plans currently</p>
                 </div>
               </motion.div>
             )}
@@ -202,7 +247,7 @@ export const ProfilePage = () => {
   );
 };
 
-// Reusable components
+// Reusable components (keep the same as before)
 const InfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
   <div className="flex items-start gap-3">
     <span className="text-teal-500 mt-1">{icon}</span>
@@ -257,7 +302,7 @@ const PlanCard = ({ plan, index }: { plan: any, index: number }) => (
   </TiltCard>
 );
 
-// 3D Tilt Card Component
+// 3D Tilt Card Component (keep the same as before)
 const TiltCard = ({ children }: { children: React.ReactNode }) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);

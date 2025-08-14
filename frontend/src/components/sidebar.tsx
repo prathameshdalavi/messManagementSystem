@@ -34,9 +34,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarItems = [
     { label: "Home", subItems: [] },
     { label: "My Plans", subItems: [] },
-    { label: "Profile"},
+    { label: "Profile" },
     { label: "Settings" },
-    { label: "Logout"},
+    { label: "Logout" },
   ];
 
   const functionalityButtons = [
@@ -172,8 +172,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   key={func.id}
                   onClick={() => setSelectedFunctionality(func.id)}
                   className={`w-full text-center cursor-pointer  px-2 py-2 rounded transition-colors ${selectedFunctionality === func.id
-                      ? "bg-teal-600 text-white"
-                      : "hover:bg-gray-600 text-gray-200"
+                    ? "bg-teal-600 text-white"
+                    : "hover:bg-gray-600 text-gray-200"
                     }`}
                 >
                   {func.label}
@@ -211,8 +211,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ? handleMyPlansClick()
                     : handleItemClick(item)
                 }
-                className="w-full text-center cursor-pointer  px-2 py-2 hover:bg-gray-700 rounded"
-              >
+                className={`w-full text-center cursor-pointer px-2 py-2 hover:bg-gray-700 rounded ${item.label === "Logout" ? " bg-red-900  hover:bg-red-800  rounded-4xl "  : ""
+                  }`} >
                 {item.label}
               </button>
             ))}
