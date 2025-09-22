@@ -36,9 +36,9 @@ export const NavBar = () => {
   return (
     <nav className="bg-gradient-to-br from-teal-50 to-white shadow-sm py-4 px-26 flex items-center justify-between">
       <div className="flex items-center space-x-2">
-        <div className="w-10 h-10 bg-teal-700 rounded-full flex items-center justify-center pb-1"><span className="font-bold  text-xl text-white">KC</span>
+        <div className="w-10 h-10 bg-teal-700 rounded-full flex items-center justify-center pb-1"><span className="font-bold  text-xl text-white">AK</span>
         </div>
-        <span className="text-2xl text-teal-700   font-bold">KhaanaCloud</span>
+        <span className="text-2xl text-teal-700   font-bold">Aai'sKitchen</span>
       </div>
 
       <div>

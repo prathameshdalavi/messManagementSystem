@@ -4,8 +4,8 @@ import mongoose from "mongoose";
 import http from "http";
 import mainRouter from "./routes";
 import { initSocket } from "./socket";
-import { startAutoResumeCron } from "./utils/corn/cronJobs";
 import cors from "cors";
+import { autoResumePausedPlans } from "./utils/corn/autoresume";
 dotenv.config();
 
 const app = express();
@@ -31,11 +31,12 @@ async function main() {
     await mongoose.connect(process.env.MONGODB_URL);
     console.log("✅ MongoDB Connected Successfully!");
 
-    startAutoResumeCron(); 
+    
 
     server.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
     });
+    autoResumePausedPlans()
   } catch (error) {
     console.error("❌ Initialization failed:", error);
     process.exit(1);
