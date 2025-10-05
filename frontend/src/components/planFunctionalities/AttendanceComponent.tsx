@@ -28,22 +28,25 @@ interface AttendanceHistoryEntry {
 }
 
 export const AttendanceComponent: React.FC = () => {
+  const [attendance, setAttendance] = useState<any>(null);
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
-  const [attendanceType, setAttendanceType] =
-    useState<AttendanceType>("lunch");
+  const [attendanceType, setAttendanceType] = useState<AttendanceType>("lunch");
   const [message, setMessage] = useState<AttendanceMessage | null>(null);
   const [history, setHistory] = useState<AttendanceHistoryEntry[]>([]);
   const html5qrcodeRef = useRef<Html5Qrcode | null>(null);
   const selectedPlan = useSelector(selectSelectedPlan);
 
+  // Load history from localStorage
   useEffect(() => {
-    // Load previous history from localStorage
-    const stored = JSON.parse(
-      localStorage.getItem("attendanceHistory") || "[]"
-    );
+    const stored = JSON.parse(localStorage.getItem("attendanceHistory") || "[]");
     setHistory(stored);
   }, []);
+
+  // Fetch attendance for the selected plan
+  useEffect(() => {
+    if (selectedPlan) fetchAttendance();
+  }, [selectedPlan]);
 
   useEffect(() => {
     return () => {
@@ -51,17 +54,27 @@ export const AttendanceComponent: React.FC = () => {
     };
   }, []);
 
+  const fetchAttendance = async () => {
+    if (!selectedPlan?.messId?._id) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.post(
+        `${BACKEND_URL}/api/v1/user/attendance/getRecords`,
+        { messId: selectedPlan.messId._id },
+        { headers: { token } }
+      );
+      if (res.data.success) setAttendance(res.data.data);
+    } catch (error: any) {
+      setAttendance(null);
+      setMessage({ type: "error", text: error?.response?.data?.message || "Failed to fetch attendance" });
+    }
+  };
+
   const startScanner = async () => {
     const isSecure =
-      window.isSecureContext ||
-      window.location.protocol === "https:" ||
-      window.location.hostname === "localhost";
-
+      window.isSecureContext || window.location.protocol === "https:" || window.location.hostname === "localhost";
     if (!isSecure) {
-      setMessage({
-        type: "error",
-        text: "Camera requires HTTPS or localhost.",
-      });
+      setMessage({ type: "error", text: "Camera requires HTTPS or localhost." });
       return;
     }
 
@@ -77,13 +90,9 @@ export const AttendanceComponent: React.FC = () => {
         }
 
         html5qrcodeRef.current = new Html5Qrcode("qr-reader");
-
         const devices = await Html5Qrcode.getCameras();
         if (!devices.length) throw new Error("No camera found.");
-
-        const backCam = devices.find((d) =>
-          /back|rear|environment/i.test(d.label)
-        );
+        const backCam = devices.find((d) => /back|rear|environment/i.test(d.label));
         const cameraId = backCam ? backCam.id : devices[0].id;
 
         setScanning(true);
@@ -91,12 +100,8 @@ export const AttendanceComponent: React.FC = () => {
         await html5qrcodeRef.current.start(
           cameraId,
           { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
-            onScanSuccess(decodedText);
-          },
-          (errorMessage) => {
-            console.warn("QR scanning error:", errorMessage);
-          }
+          onScanSuccess,
+          () => {}
         );
       } catch (err: any) {
         console.error("Camera error:", err);
@@ -119,9 +124,7 @@ export const AttendanceComponent: React.FC = () => {
       try {
         await html5qrcodeRef.current.stop();
         await html5qrcodeRef.current.clear();
-      } catch (err) {
-        console.warn("Error stopping scanner:", err);
-      }
+      } catch {}
       html5qrcodeRef.current = null;
     }
     setScanning(false);
@@ -130,12 +133,8 @@ export const AttendanceComponent: React.FC = () => {
 
   const onScanSuccess = async (decodedText: string) => {
     await stopScanner();
-    setMessage({
-      type: "success",
-      text: "QR scanned successfully! Marking attendance...",
-    });
+    setMessage({ type: "success", text: "QR scanned successfully! Marking attendance..." });
 
-    // Save to history
     const newEntry: AttendanceHistoryEntry = {
       messId: decodedText,
       type: attendanceType,
@@ -153,7 +152,6 @@ export const AttendanceComponent: React.FC = () => {
       setMessage({ type: "error", text: "Invalid QR code content." });
       return;
     }
-
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
@@ -162,18 +160,11 @@ export const AttendanceComponent: React.FC = () => {
         { headers: { token } }
       );
       if (res.data.success) {
-        setMessage({
-          type: "success",
-          text: "Attendance marked successfully!",
-        });
+        setMessage({ type: "success", text: "Attendance marked successfully!" });
+        await fetchAttendance();
       }
     } catch (error: any) {
-      setMessage({
-        type: "error",
-        text:
-          error?.response?.data?.message ||
-          "Failed to mark attendance. Try again.",
-      });
+      setMessage({ type: "error", text: error?.response?.data?.message || "Failed to mark attendance" });
     }
   };
 
@@ -183,19 +174,28 @@ export const AttendanceComponent: React.FC = () => {
     localStorage.removeItem("attendanceHistory");
   };
 
+  const renderStatCard = (title: string, value: number, color: string, icon: React.ReactNode) => (
+    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500">{title}</p>
+          <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
+        </div>
+        <div className={`p-3 rounded-full ${color.replace("text", "bg").replace("-600", "-100")}`}>{icon}</div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      {/* Header & QR Scan */}
+      {/* Header & Scan Button */}
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <FaCalendarAlt className="text-teal-500" />
-            Attendance Records
+            <FaCalendarAlt className="text-teal-500" /> Attendance Records
           </h3>
           {selectedPlan?.messId?.messName && (
-            <p className="text-sm text-gray-600 mt-1">
-              Mess: {selectedPlan.messId.messName}
-            </p>
+            <p className="text-sm text-gray-600 mt-1">Mess: {selectedPlan.messId.messName}</p>
           )}
         </div>
         <button
@@ -207,7 +207,7 @@ export const AttendanceComponent: React.FC = () => {
         </button>
       </div>
 
-      {/* Message */}
+      {/* Messages */}
       <AnimatePresence>
         {message && (
           <motion.div
@@ -221,17 +221,10 @@ export const AttendanceComponent: React.FC = () => {
             }`}
           >
             <div className="flex items-center gap-2">
-              {message.type === "success" ? (
-                <FaCheckCircle className="text-green-500" />
-              ) : (
-                <FaTimesCircle className="text-red-500" />
-              )}
+              {message.type === "success" ? <FaCheckCircle className="text-green-500" /> : <FaTimesCircle className="text-red-500" />}
               <span>{message.text}</span>
             </div>
-            <button
-              onClick={clearMessage}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={clearMessage} className="text-gray-400 hover:text-gray-600">
               <FaTimes />
             </button>
           </motion.div>
@@ -240,31 +233,20 @@ export const AttendanceComponent: React.FC = () => {
 
       {/* Scanner */}
       {showScanner && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-200"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex justify-between items-center mb-4">
             <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
               <FaCamera className="text-teal-500" /> Scan QR Code
             </h4>
-            <button
-              onClick={stopScanner}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={stopScanner} className="text-gray-400 hover:text-gray-600">
               <FaTimes size={20} />
             </button>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Meal Type
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Meal Type</label>
             <select
               value={attendanceType}
-              onChange={(e) =>
-                setAttendanceType(e.target.value as AttendanceType)
-              }
+              onChange={(e) => setAttendanceType(e.target.value as AttendanceType)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="breakfast">Breakfast</option>
@@ -272,10 +254,7 @@ export const AttendanceComponent: React.FC = () => {
               <option value="dinner">Dinner</option>
             </select>
           </div>
-          <div
-            id="qr-reader"
-            className="w-full max-w-md mx-auto rounded-lg overflow-hidden"
-          />
+          <div id="qr-reader" className="w-full max-w-md mx-auto rounded-lg overflow-hidden" />
           {scanning && (
             <div className="text-center mt-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto" />
@@ -285,31 +264,54 @@ export const AttendanceComponent: React.FC = () => {
         </motion.div>
       )}
 
-      {/* Inline History */}
+      {/* Attendance Stats (Present / Absent / Percentages) */}
+      {attendance && (
+        <div className="space-y-6">
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Present Counts</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {renderStatCard("Lunch Present", attendance.getLunchAttendanceCount || 0, "text-green-600", <FaCheckCircle className="text-green-500" />)}
+              {renderStatCard("Breakfast Present", attendance.getBreakfastAttendanceCount || 0, "text-blue-600", <FaCheckCircle className="text-blue-500" />)}
+              {renderStatCard("Dinner Present", attendance.getDinnerAttendanceCount || 0, "text-purple-600", <FaCheckCircle className="text-purple-500" />)}
+              {renderStatCard("Total Days", attendance.totalDays || 0, "text-teal-600", <FaCalendarAlt className="text-teal-500" />)}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Absent Counts</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {renderStatCard("Lunch Absent", attendance.getLunchAbsentyCount || 0, "text-red-600", <FaTimesCircle className="text-red-500" />)}
+              {renderStatCard("Breakfast Absent", attendance.getBreakfastAbsentyCount || 0, "text-red-600", <FaTimesCircle className="text-red-500" />)}
+              {renderStatCard("Dinner Absent", attendance.getDinnerAbsentyCount || 0, "text-red-600", <FaTimesCircle className="text-red-500" />)}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Attendance Percentages</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {renderStatCard("Lunch Attendance", attendance.lunchAttendancePercentage || 0, "text-green-600", <span className="font-bold">%</span>)}
+              {renderStatCard("Breakfast Attendance", attendance.breakfastAttendancePercentage || 0, "text-blue-600", <span className="font-bold">%</span>)}
+              {renderStatCard("Dinner Attendance", attendance.dinnerAttendancePercentage || 0, "text-purple-600", <span className="font-bold">%</span>)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Inline History Section */}
       {history.length > 0 && (
         <div className="mt-6">
           <div className="flex justify-between items-center mb-2">
             <h4 className="text-lg font-semibold text-gray-800">Scan History</h4>
-            <button
-              onClick={clearHistory}
-              className="text-red-600 hover:text-red-800 text-sm"
-            >
+            <button onClick={clearHistory} className="text-red-600 hover:text-red-800 text-sm">
               Clear History
             </button>
           </div>
           <ul className="space-y-2 max-h-64 overflow-y-auto">
             {history.map((entry, idx) => (
-              <li
-                key={idx}
-                className="p-3 bg-gray-50 border rounded shadow-sm flex justify-between items-center"
-              >
+              <li key={idx} className="p-3 bg-gray-50 border rounded shadow-sm flex justify-between items-center">
                 <div>
-                  <p className="text-sm">
-                    <strong>Mess ID:</strong> {entry.messId}
-                  </p>
-                  <p className="text-sm">
-                    <strong>Meal:</strong> {entry.type}
-                  </p>
+                  <p className="text-sm"><strong>Mess ID:</strong> {entry.messId}</p>
+                  <p className="text-sm"><strong>Meal:</strong> {entry.type}</p>
                   <p className="text-xs text-gray-500">{entry.time}</p>
                 </div>
               </li>
