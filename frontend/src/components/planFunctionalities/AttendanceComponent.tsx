@@ -34,13 +34,51 @@ export const AttendanceComponent: React.FC = () => {
   const [message, setMessage] = useState<AttendanceMessage | null>(null);
   const [history, setHistory] = useState<AttendanceHistoryEntry[]>([]);
   const html5qrcodeRef = useRef<Html5Qrcode | null>(null);
+  const attendanceTypeRef = useRef<HTMLSelectElement>(null);
   const selectedPlan = useSelector(selectSelectedPlan);
 
-  // Load history from localStorage
+  const messId = selectedPlan?.messId?._id;
+
+  // Load attendance records from backend
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("attendanceHistory") || "[]");
-    setHistory(stored);
-  }, []);
+    if (!messId) return;
+
+    const fetchRecords = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.post(
+          `${BACKEND_URL}/api/v1/user/attendance/getRecords`,
+          { messId },
+          { headers: { token } }
+        );
+
+        if (res.data.success) {
+          const data = res.data.data;
+          const records: AttendanceHistoryEntry[] = [];
+
+          if (data.getBreakfastAttendanceCount)
+            for (let i = 0; i < data.getBreakfastAttendanceCount; i++)
+              records.push({ messId, type: "breakfast", time: "Recorded" });
+          if (data.getLunchAttendanceCount)
+            for (let i = 0; i < data.getLunchAttendanceCount; i++)
+              records.push({ messId, type: "lunch", time: "Recorded" });
+          if (data.getDinnerAttendanceCount)
+            for (let i = 0; i < data.getDinnerAttendanceCount; i++)
+              records.push({ messId, type: "dinner", time: "Recorded" });
+
+          setHistory(records);
+        }
+      } catch (err: any) {
+        console.error("Failed to load attendance records:", err);
+        setMessage({
+          type: "error",
+          text: err?.response?.data?.message || "Failed to fetch attendance records.",
+        });
+      }
+    };
+
+    fetchRecords();
+  }, [messId]);
 
   useEffect(() => {
     return () => {
@@ -84,7 +122,7 @@ export const AttendanceComponent: React.FC = () => {
           cameraId,
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            onScanSuccess(decodedText, attendanceType);
+            onScanSuccess(decodedText);
           },
           (errorMessage) => {
             console.warn("QR scanning error:", errorMessage);
@@ -113,8 +151,10 @@ export const AttendanceComponent: React.FC = () => {
     setShowScanner(false);
   };
 
-  const onScanSuccess = async (decodedText: string, type: AttendanceType) => {
+  const onScanSuccess = async (decodedText: string) => {
     await stopScanner();
+    const type = attendanceTypeRef.current?.value as AttendanceType;
+
     setMessage({ type: "success", text: "QR scanned! Marking attendance..." });
 
     const newEntry: AttendanceHistoryEntry = {
@@ -124,7 +164,6 @@ export const AttendanceComponent: React.FC = () => {
     };
     const updatedHistory = [newEntry, ...history];
     setHistory(updatedHistory);
-    localStorage.setItem("attendanceHistory", JSON.stringify(updatedHistory));
 
     await markAttendance(decodedText, type);
   };
@@ -155,10 +194,6 @@ export const AttendanceComponent: React.FC = () => {
   };
 
   const clearMessage = () => setMessage(null);
-  const clearHistory = () => {
-    setHistory([]);
-    localStorage.removeItem("attendanceHistory");
-  };
 
   return (
     <div className="space-y-6">
@@ -227,6 +262,7 @@ export const AttendanceComponent: React.FC = () => {
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Meal Type</label>
             <select
+              ref={attendanceTypeRef}
               value={attendanceType}
               onChange={(e) => setAttendanceType(e.target.value as AttendanceType)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -249,12 +285,7 @@ export const AttendanceComponent: React.FC = () => {
       {/* History */}
       {history.length > 0 && (
         <div className="mt-6">
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="text-lg font-semibold text-gray-800">Scan History</h4>
-            <button onClick={clearHistory} className="text-red-600 hover:text-red-800 text-sm">
-              Clear History
-            </button>
-          </div>
+          <h4 className="text-lg font-semibold text-gray-800 mb-2">Attendance History</h4>
           <ul className="space-y-2 max-h-64 overflow-y-auto">
             {history.map((entry, idx) => (
               <li
