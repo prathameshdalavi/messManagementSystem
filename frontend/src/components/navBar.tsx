@@ -59,10 +59,10 @@ export const NavBar = ({ toggleSidebar }: NavBarProps) => {
         {/* Logo */}
         <div className="flex items-center space-x-2">
           <div className="w-10 h-10 bg-teal-700 rounded-full flex items-center justify-center pb-1">
-            <span className="font-bold text-xl text-white">AK</span>
+            <span className="font-bold text-xl text-white">KC</span>
           </div>
           <span className="text-xl sm:text-2xl text-teal-700 font-bold">
-            Aai'sKitchen
+            Khanna Cloud
           </span>
         </div>
       </div>

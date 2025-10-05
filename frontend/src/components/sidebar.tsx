@@ -3,7 +3,11 @@ import React, { useState } from "react";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
 import { useDispatch, useSelector } from "react-redux";
-import { setSelectedPlan, clearSelectedPlan, selectSelectedPlan } from "../redux/nearbyMessSlice";
+import {
+  setSelectedPlan,
+  clearSelectedPlan,
+  selectSelectedPlan,
+} from "../redux/nearbyMessSlice";
 import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
@@ -56,7 +60,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setLoadingPlans(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`${BACKEND_URL}/api/v1/user/plans/myPlans`, { headers: { token } });
+      const res = await axios.get(`${BACKEND_URL}/api/v1/user/plans/myPlans`, {
+        headers: { token },
+      });
       setUserPlans(res.data.data || []);
     } catch {
       setUserPlans([]);
@@ -64,7 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       setLoadingPlans(false);
     }
 
-    if (isMobile()) toggleSidebar(); // auto-close on mobile
+    // ❌ Do NOT close sidebar here
   };
 
   const handlePlanSelect = (plan: any) => {
@@ -72,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setCurrentMenu("planDetails");
     setSelectedFunctionality("notices");
 
-    if (isMobile()) toggleSidebar(); // auto-close on mobile
+    // ❌ Do NOT close sidebar — keep it open to show functionality buttons
   };
 
   const handleBackToMain = () => {
@@ -80,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setCurrentMenu("main");
     setSelectedFunctionality("");
 
-    if (isMobile()) toggleSidebar();
+    // ✅ Do NOT close sidebar on mobile when navigating inside sidebar
   };
 
   const handleBackToPlans = () => {
@@ -88,15 +94,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setCurrentMenu("My Plans");
     setSelectedFunctionality("");
 
-    if (isMobile()) toggleSidebar();
+    // ✅ Keep sidebar open on mobile
   };
 
   const handleItemClick = (item: any) => {
-    if (item.label === "Home") navigate("/home");
-    else if (item.label === "My Plans") handleMyPlansClick();
-    else if (item.label === "Profile") navigate("/profile");
-    else if (item.label === "Settings") navigate("/settings");
-    else if (item.label === "Logout") {
+    if (item.label === "Home") {
+      navigate("/home");
+      if (isMobile()) toggleSidebar();
+    } else if (item.label === "My Plans") {
+      handleMyPlansClick(); // keep sidebar open
+    } else if (item.label === "Profile") {
+      navigate("/profile");
+      if (isMobile()) toggleSidebar();
+    } else if (item.label === "Settings") {
+      navigate("/settings");
+      if (isMobile()) toggleSidebar();
+    } else if (item.label === "Logout") {
       localStorage.removeItem("token");
       dispatch(clearSelectedPlan());
       setUserPlans([]);
@@ -104,9 +117,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       setSelectedFunctionality("");
       navigate("/home");
       alert("Logged out successfully!");
+      if (isMobile()) toggleSidebar();
     }
-
-    if (isMobile()) toggleSidebar(); // auto-close on mobile
   };
 
   return (
@@ -119,8 +131,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="px-4 py-4 border-b border-gray-700 text-center font-bold text-teal-400">
         {selectedPlan ? (
           <div className="space-y-2">
-            <div className="text-sm font-normal text-white">{selectedPlan.messId?.messName}</div>
-            <button onClick={handleBackToPlans} className="text-xs hover:underline text-teal-300">
+            <div className="text-sm font-normal text-white">
+              {selectedPlan.messId?.messName}
+            </div>
+            <button
+              onClick={handleBackToPlans}
+              className="text-xs hover:underline text-teal-300"
+            >
               ← Back to Plans
             </button>
           </div>
@@ -136,13 +153,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar Content */}
       <div className="flex flex-col justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-full gap-2 md:gap-3">
         {/* Functionality Buttons */}
-        {selectedPlan && currentMenu === "planDetails" &&
+        {selectedPlan &&
+          currentMenu === "planDetails" &&
           functionalityButtons.map((func) => (
             <button
               key={func.id}
               onClick={() => {
                 setSelectedFunctionality(func.id);
-                if (isMobile()) toggleSidebar(); // auto-close on mobile
+                if (isMobile()) toggleSidebar(); // ✅ only close when user selects a functionality
               }}
               className={`w-full text-center px-3 py-2 rounded transition-colors ${
                 selectedFunctionality === func.id
@@ -169,7 +187,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             ))
           ) : (
-            <div className="text-center py-2 text-gray-400">No plans found.</div>
+            <div className="text-center py-2 text-gray-400">
+              No plans found.
+            </div>
           ))}
 
         {/* Main Menu */}

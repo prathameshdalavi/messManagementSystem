@@ -10,9 +10,9 @@ export const Footer = () => {
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">M</span>
+                <span className="text-white font-bold">KC</span>
               </div>
-              <span className="text-xl font-bold">MessMate</span>
+              <span className="text-xl font-bold">Khanna Cloud</span>
             </div>
             <p className="text-gray-400 mb-4">
               Making student life easier one meal at a time.
@@ -66,7 +66,7 @@ export const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact</h3>
             <ul className="space-y-2 text-gray-400">
-              <li>hello@messmate.com</li>
+              <li>hello@KhannaCloud.com</li>
               <li>+91 98765 43210</li>
               <li>123 Startup Street, Bangalore, India</li>
             </ul>
@@ -75,7 +75,7 @@ export const Footer = () => {
 
         {/* Footer Bottom */}
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400 text-sm">
-          © {new Date().getFullYear()} MessMate. All rights reserved.
+          © {new Date().getFullYear()} Khanna Cloud. All rights reserved.
         </div>
       </div>
     </footer>
