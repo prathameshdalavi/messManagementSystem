@@ -21,48 +21,35 @@ interface AttendanceMessage {
   text: string;
 }
 
+interface AttendanceHistoryEntry {
+  messId: string;
+  type: AttendanceType;
+  time: string;
+}
+
 export const AttendanceComponent: React.FC = () => {
-  // const [attendance, setAttendance] = useState<any>(null);
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [attendanceType, setAttendanceType] =
     useState<AttendanceType>("lunch");
   const [message, setMessage] = useState<AttendanceMessage | null>(null);
+  const [history, setHistory] = useState<AttendanceHistoryEntry[]>([]);
   const html5qrcodeRef = useRef<Html5Qrcode | null>(null);
   const selectedPlan = useSelector(selectSelectedPlan);
 
-  // Fetch attendance when plan changes
   useEffect(() => {
-    if (selectedPlan) fetchAttendance();
-  }, [selectedPlan]);
+    // Load previous history from localStorage
+    const stored = JSON.parse(
+      localStorage.getItem("attendanceHistory") || "[]"
+    );
+    setHistory(stored);
+  }, []);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       stopScanner();
     };
   }, []);
-
-  const fetchAttendance = async () => {
-    if (!selectedPlan?.messId?._id) return;
-    try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `${BACKEND_URL}/api/v1/user/attendance/getRecords`,
-        { messId: selectedPlan.messId._id },
-        { headers: { token } }
-      );
-      // if (res.data.success) setAttendance(res.data.data);
-    } catch (error: any) {
-      // setAttendance(null);
-      setMessage({
-        type: "error",
-        text:
-          error?.response?.data?.message ||
-          "Failed to fetch attendance records",
-      });
-    }
-  };
 
   const startScanner = async () => {
     const isSecure =
@@ -81,7 +68,6 @@ export const AttendanceComponent: React.FC = () => {
     setShowScanner(true);
     setMessage(null);
 
-    // Wait a tick to ensure #qr-reader is rendered
     setTimeout(async () => {
       try {
         if (html5qrcodeRef.current) {
@@ -125,7 +111,7 @@ export const AttendanceComponent: React.FC = () => {
         else
           setMessage({ type: "error", text: `Camera error: ${msg}` });
       }
-    }, 500); // ✅ Delay ensures DOM exists
+    }, 500);
   };
 
   const stopScanner = async () => {
@@ -148,6 +134,17 @@ export const AttendanceComponent: React.FC = () => {
       type: "success",
       text: "QR scanned successfully! Marking attendance...",
     });
+
+    // Save to history
+    const newEntry: AttendanceHistoryEntry = {
+      messId: decodedText,
+      type: attendanceType,
+      time: new Date().toLocaleString(),
+    };
+    const updatedHistory = [newEntry, ...history];
+    setHistory(updatedHistory);
+    localStorage.setItem("attendanceHistory", JSON.stringify(updatedHistory));
+
     await markAttendance(decodedText);
   };
 
@@ -169,7 +166,6 @@ export const AttendanceComponent: React.FC = () => {
           type: "success",
           text: "Attendance marked successfully!",
         });
-        await fetchAttendance();
       }
     } catch (error: any) {
       setMessage({
@@ -182,7 +178,10 @@ export const AttendanceComponent: React.FC = () => {
   };
 
   const clearMessage = () => setMessage(null);
-
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem("attendanceHistory");
+  };
 
   return (
     <div className="space-y-6">
@@ -284,6 +283,39 @@ export const AttendanceComponent: React.FC = () => {
             </div>
           )}
         </motion.div>
+      )}
+
+      {/* Inline History */}
+      {history.length > 0 && (
+        <div className="mt-6">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="text-lg font-semibold text-gray-800">Scan History</h4>
+            <button
+              onClick={clearHistory}
+              className="text-red-600 hover:text-red-800 text-sm"
+            >
+              Clear History
+            </button>
+          </div>
+          <ul className="space-y-2 max-h-64 overflow-y-auto">
+            {history.map((entry, idx) => (
+              <li
+                key={idx}
+                className="p-3 bg-gray-50 border rounded shadow-sm flex justify-between items-center"
+              >
+                <div>
+                  <p className="text-sm">
+                    <strong>Mess ID:</strong> {entry.messId}
+                  </p>
+                  <p className="text-sm">
+                    <strong>Meal:</strong> {entry.type}
+                  </p>
+                  <p className="text-xs text-gray-500">{entry.time}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );
