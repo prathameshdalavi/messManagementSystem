@@ -21,10 +21,17 @@ interface AttendanceMessage {
   text: string;
 }
 
-interface AttendanceHistoryEntry {
-  messId: string;
-  type: AttendanceType;
-  time: string;
+interface AttendanceData {
+  totalDays: number;
+  getLunchAttendanceCount: number;
+  getBreakfastAttendanceCount: number;
+  getDinnerAttendanceCount: number;
+  getLunchAbsentyCount: number;
+  getBreakfastAbsentyCount: number;
+  getDinnerAbsentyCount: number;
+  lunchAttendancePercentage: number;
+  breakfastAttendancePercentage: number;
+  dinnerAttendancePercentage: number;
 }
 
 export const AttendanceComponent: React.FC = () => {
@@ -32,52 +39,33 @@ export const AttendanceComponent: React.FC = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [attendanceType, setAttendanceType] = useState<AttendanceType>("lunch");
   const [message, setMessage] = useState<AttendanceMessage | null>(null);
-  const [history, setHistory] = useState<AttendanceHistoryEntry[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceData | null>(null);
   const html5qrcodeRef = useRef<Html5Qrcode | null>(null);
   const attendanceTypeRef = useRef<HTMLSelectElement>(null);
   const selectedPlan = useSelector(selectSelectedPlan);
 
   const messId = selectedPlan?.messId?._id;
 
-  // Load attendance records from backend
-  useEffect(() => {
+  const fetchAttendance = async () => {
     if (!messId) return;
-
-    const fetchRecords = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await axios.post(
-          `${BACKEND_URL}/api/v1/user/attendance/getRecords`,
-          { messId },
-          { headers: { token } }
-        );
-
-        if (res.data.success) {
-          const data = res.data.data;
-          const records: AttendanceHistoryEntry[] = [];
-
-          if (data.getBreakfastAttendanceCount)
-            for (let i = 0; i < data.getBreakfastAttendanceCount; i++)
-              records.push({ messId, type: "breakfast", time: "Recorded" });
-          if (data.getLunchAttendanceCount)
-            for (let i = 0; i < data.getLunchAttendanceCount; i++)
-              records.push({ messId, type: "lunch", time: "Recorded" });
-          if (data.getDinnerAttendanceCount)
-            for (let i = 0; i < data.getDinnerAttendanceCount; i++)
-              records.push({ messId, type: "dinner", time: "Recorded" });
-
-          setHistory(records);
-        }
-      } catch (err: any) {
-        console.error("Failed to load attendance records:", err);
-        setMessage({
-          type: "error",
-          text: err?.response?.data?.message || "Failed to fetch attendance records.",
-        });
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.post(
+        `${BACKEND_URL}/api/v1/user/attendance/getRecords`,
+        { messId },
+        { headers: { token } }
+      );
+      if (res.data.success) {
+        setAttendance(res.data.data);
       }
-    };
+    } catch (err: any) {
+      console.error(err);
+      setMessage({ type: "error", text: "Failed to fetch attendance records." });
+    }
+  };
 
-    fetchRecords();
+  useEffect(() => {
+    fetchAttendance();
   }, [messId]);
 
   useEffect(() => {
@@ -157,15 +145,8 @@ export const AttendanceComponent: React.FC = () => {
 
     setMessage({ type: "success", text: "QR scanned! Marking attendance..." });
 
-    const newEntry: AttendanceHistoryEntry = {
-      messId: decodedText,
-      type,
-      time: new Date().toLocaleString(),
-    };
-    const updatedHistory = [newEntry, ...history];
-    setHistory(updatedHistory);
-
     await markAttendance(decodedText, type);
+    fetchAttendance();
   };
 
   const markAttendance = async (messIdFromScan: string, type: AttendanceType) => {
@@ -194,6 +175,16 @@ export const AttendanceComponent: React.FC = () => {
   };
 
   const clearMessage = () => setMessage(null);
+
+  const renderStatCard = (title: string, value: number, colorClass: string, icon: React.ReactNode) => (
+    <div className="p-4 bg-white rounded-xl shadow-sm border border-gray-200 flex items-center gap-3">
+      <div className="text-2xl">{icon}</div>
+      <div>
+        <p className={`text-sm text-gray-500`}>{title}</p>
+        <p className={`text-xl font-semibold ${colorClass}`}>{value}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -282,29 +273,124 @@ export const AttendanceComponent: React.FC = () => {
         </motion.div>
       )}
 
-      {/* History */}
-      {history.length > 0 && (
-        <div className="mt-6">
-          <h4 className="text-lg font-semibold text-gray-800 mb-2">Attendance History</h4>
-          <ul className="space-y-2 max-h-64 overflow-y-auto">
-            {history.map((entry, idx) => (
-              <li
-                key={idx}
-                className="p-3 bg-gray-50 border rounded shadow-sm flex justify-between items-center"
-              >
-                <div>
-                  <p className="text-sm">
-                    <strong>Mess ID:</strong> {entry.messId}
-                  </p>
-                  <p className="text-sm">
-                    <strong>Meal:</strong> {entry.type}
-                  </p>
-                  <p className="text-xs text-gray-500">{entry.time}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+      {/* Attendance Stats */}
+      {!selectedPlan?.messId?._id ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200"
+        >
+          <div className="bg-gray-50 p-6 rounded-full inline-block mb-4">
+            <FaCalendarAlt className="mx-auto text-4xl text-gray-300" />
+          </div>
+          <h4 className="text-lg font-medium text-gray-600 mb-2">No Plan Selected</h4>
+          <p className="text-gray-400 max-w-md mx-auto">
+            Please select a mess plan to view attendance records.
+          </p>
+        </motion.div>
+      ) : attendance ? (
+        <div className="space-y-6">
+          {/* Present Stats */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Present Counts</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {renderStatCard(
+                "Lunch Present",
+                attendance.getLunchAttendanceCount || 0,
+                "text-green-600",
+                <FaCheckCircle className="text-green-500" />
+              )}
+              {renderStatCard(
+                "Breakfast Present",
+                attendance.getBreakfastAttendanceCount || 0,
+                "text-blue-600",
+                <FaCheckCircle className="text-blue-500" />
+              )}
+              {renderStatCard(
+                "Dinner Present",
+                attendance.getDinnerAttendanceCount || 0,
+                "text-purple-600",
+                <FaCheckCircle className="text-purple-500" />
+              )}
+              {renderStatCard(
+                "Total Days",
+                attendance.totalDays || 0,
+                "text-teal-600",
+                <FaCalendarAlt className="text-teal-500" />
+              )}
+            </div>
+          </div>
+
+          {/* Absent Stats */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Absent Counts</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {renderStatCard(
+                "Lunch Absent",
+                attendance.getLunchAbsentyCount || 0,
+                "text-red-600",
+                <FaTimesCircle className="text-red-500" />
+              )}
+              {renderStatCard(
+                "Breakfast Absent",
+                attendance.getBreakfastAbsentyCount || 0,
+                "text-red-600",
+                <FaTimesCircle className="text-red-500" />
+              )}
+              {renderStatCard(
+                "Dinner Absent",
+                attendance.getDinnerAbsentyCount || 0,
+                "text-red-600",
+                <FaTimesCircle className="text-red-500" />
+              )}
+            </div>
+          </div>
+
+          {/* Percentages */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Attendance Percentages</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {renderStatCard(
+                "Lunch Attendance",
+                attendance.lunchAttendancePercentage || 0,
+                "text-green-600",
+                <span className="font-bold">%</span>
+              )}
+              {renderStatCard(
+                "Breakfast Attendance",
+                attendance.breakfastAttendancePercentage || 0,
+                "text-blue-600",
+                <span className="font-bold">%</span>
+              )}
+              {renderStatCard(
+                "Dinner Attendance",
+                attendance.dinnerAttendancePercentage || 0,
+                "text-purple-600",
+                <span className="font-bold">%</span>
+              )}
+            </div>
+          </div>
         </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200"
+        >
+          <div className="bg-gray-50 p-6 rounded-full inline-block mb-4">
+            <FaCalendarAlt className="mx-auto text-4xl text-gray-300" />
+          </div>
+          <h4 className="text-lg font-medium text-gray-600 mb-2">No Records Found</h4>
+          <p className="text-gray-400 max-w-md mx-auto">
+            No attendance records available for this plan yet.
+          </p>
+          <button
+            onClick={fetchAttendance}
+            className="mt-4 text-sm text-teal-600 hover:text-teal-800 font-medium transition-colors"
+          >
+            Refresh Records
+          </button>
+        </motion.div>
       )}
     </div>
   );
