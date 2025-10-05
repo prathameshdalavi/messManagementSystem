@@ -23,15 +23,8 @@ export const PauseResumeComponent: React.FC = () => {
       const token = localStorage.getItem("token");
       const res = await axios.post(
         `${BACKEND_URL}/api/v1/user/pauseResume/pausePlan`,
-        {
-          planId: selectedPlan.planId._id,
-          reason,
-        },
-        {
-          headers: {
-            token,
-          },
-        }
+        { planId: selectedPlan.planId._id, reason },
+        { headers: { token } }
       );
       alert(res.data?.message || "Plan paused successfully!");
       setIsPaused(true);
@@ -53,14 +46,8 @@ export const PauseResumeComponent: React.FC = () => {
       const token = localStorage.getItem("token");
       const res = await axios.post(
         `${BACKEND_URL}/api/v1/user/pauseResume/resumePlan`,
-        {
-          planId: selectedPlan.planId._id,
-        },
-        {
-          headers: {
-            token,
-          },
-        }
+        { planId: selectedPlan.planId._id },
+        { headers: { token } }
       );
       alert(res.data?.message || "Plan resumed successfully!");
       setIsPaused(false);

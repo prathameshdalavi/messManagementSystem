@@ -8,52 +8,38 @@ import { HeroSection } from "./heroSection";
 
 export const HomePage = () => {
   const searchRef = React.useRef<HTMLDivElement>(null);
-  
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="font-sans bg-white overflow-hidden"
+      className="font-sans bg-white flex flex-col min-h-screen overflow-x-hidden "
     >
+      {/* Hero Section */}
       <HeroSection searchRef={searchRef} />
-      
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <SearchSection searchRef={searchRef} />
-      </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        <FeaturesGrid />
-      </motion.div>
+      {/* Main Content */}
+      <main className="flex-1 w-full">
+        {/* Search Section */}
+        <section className="px-4 sm:px-6 md:px-10 lg:px-16">
+          <SearchSection searchRef={searchRef} />
+        </section>
 
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      >
-        <ServiceSection />
-      </motion.div>
+        {/* Features Section */}
+        <section className="px-4 sm:px-6 md:px-10 lg:px-16 mt-16">
+          <FeaturesGrid />
+        </section>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <Footer />
-      </motion.div>
+        {/* Services Section */}
+        <section className="px-4 sm:px-6 md:px-10 lg:px-16 mt-16">
+          <ServiceSection />
+        </section>
+      </main>
+
+      {/* Footer */}
+      <Footer />
     </motion.div>
   );
 };

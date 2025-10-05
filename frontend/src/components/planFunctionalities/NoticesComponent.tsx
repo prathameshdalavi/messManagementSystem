@@ -22,7 +22,7 @@ export const NoticesComponent: React.FC = () => {
 
   const fetchNotices = async () => {
     if (!selectedPlan?.messId?._id) return;
-    
+
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -30,10 +30,10 @@ export const NoticesComponent: React.FC = () => {
         headers: { token },
         params: {
           userId: selectedPlan.userId,
-          mess_id: selectedPlan.messId._id
-        }
+          mess_id: selectedPlan.messId._id,
+        },
       });
-      
+
       if (response.data.success) {
         setNotices(response.data.data || []);
       } else {
@@ -51,24 +51,25 @@ export const NoticesComponent: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'short', 
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <IoIosNotificationsOutline className="text-teal-500" />
           Notices & Alerts
         </h3>
-        <button 
+        <button
           onClick={fetchNotices}
           className="text-sm text-teal-600 hover:text-teal-800 transition-colors flex items-center gap-1"
           disabled={loading}
@@ -78,6 +79,7 @@ export const NoticesComponent: React.FC = () => {
         </button>
       </div>
 
+      {/* Loading Skeleton */}
       {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
@@ -97,10 +99,7 @@ export const NoticesComponent: React.FC = () => {
                 className={`bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-teal-100 transition-all 
                   ${expandedNotice === index ? 'ring-2 ring-teal-200' : ''}`}
               >
-                <div 
-                  className="cursor-pointer"
-                  onClick={() => toggleExpandNotice(index)}
-                >
+                <div className="cursor-pointer" onClick={() => toggleExpandNotice(index)}>
                   <div className="flex items-start gap-3">
                     <div className="bg-teal-50 p-2 rounded-full">
                       <FaRegBell className="text-teal-500 text-lg" />
@@ -114,9 +113,11 @@ export const NoticesComponent: React.FC = () => {
                           {formatDate(notice.createdAt)}
                         </span>
                       </div>
-                      <p className={`text-gray-600 text-sm ${
-                        expandedNotice === index ? '' : 'line-clamp-2'
-                      }`}>
+                      <p
+                        className={`text-gray-600 text-sm ${
+                          expandedNotice === index ? '' : 'line-clamp-2'
+                        }`}
+                      >
                         {notice.message}
                       </p>
                     </div>
@@ -132,7 +133,7 @@ export const NoticesComponent: React.FC = () => {
                   >
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <span>Posted by: {notice.postedBy?.name || 'Mess Admin'}</span>
-                      <button 
+                      <button
                         className="text-teal-500 hover:text-teal-700"
                         onClick={() => toggleExpandNotice(index)}
                       >
@@ -146,11 +147,7 @@ export const NoticesComponent: React.FC = () => {
           </AnimatePresence>
         </div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
           <div className="bg-gray-50 p-6 rounded-full inline-block mb-4">
             <FaBell className="mx-auto text-4xl text-gray-300" />
           </div>

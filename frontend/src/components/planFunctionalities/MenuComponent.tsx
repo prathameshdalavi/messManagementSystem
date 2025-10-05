@@ -37,13 +37,13 @@ export const MenuComponent: React.FC = () => {
 
   const fetchMenu = async () => {
     if (!selectedPlan?.messId?._id) return;
-    
+
     setLoading(true);
     try {
       const response = await axios.get(`${BACKEND_URL}/api/v1/user/menu/seeMenu`, {
         params: { messId: selectedPlan.messId._id }
       });
-      
+
       if (response.data.success) {
         setMenu(response.data.data.menu);
       } else {
@@ -63,14 +63,17 @@ export const MenuComponent: React.FC = () => {
     dinner: '🌙'
   };
 
+  const activeDayMenu = menu?.find(item => item.day === activeDay);
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <IoFastFoodOutline className="text-teal-500 text-2xl" />
           Weekly Menu
         </h3>
-        <button 
+        <button
           onClick={fetchMenu}
           className="text-sm text-teal-600 hover:text-teal-800 transition-colors flex items-center gap-1"
           disabled={loading}
@@ -80,10 +83,11 @@ export const MenuComponent: React.FC = () => {
         </button>
       </div>
 
+      {/* Loading Skeleton */}
       {loading ? (
         <div className="space-y-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-16 w-full rounded-lg bg-gray-100 animate-pulse" />
+          {Object.keys(mealIcons).map((mealType) => (
+            <div key={mealType} className="h-24 w-full rounded-lg bg-gray-100 animate-pulse" />
           ))}
         </div>
       ) : menu ? (
@@ -93,6 +97,7 @@ export const MenuComponent: React.FC = () => {
             {daysOfWeek.map((day) => (
               <button
                 key={day}
+                aria-current={activeDay === day ? 'date' : undefined}
                 onClick={() => setActiveDay(day)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                   activeDay === day
@@ -110,7 +115,7 @@ export const MenuComponent: React.FC = () => {
 
           {/* Menu Cards */}
           <AnimatePresence mode="wait">
-            {activeDay && menu.find((item) => item.day === activeDay) && (
+            {activeDay && activeDayMenu && (
               <motion.div
                 key={activeDay}
                 initial={{ opacity: 0, y: 10 }}
@@ -120,18 +125,14 @@ export const MenuComponent: React.FC = () => {
                 className="space-y-4"
               >
                 {Object.entries(mealIcons).map(([mealType, icon]) => {
-                  const dayMenu = menu.find((item) => item.day === activeDay);
-                  const items = dayMenu?.meals[mealType as keyof Meal] || [];
-                  
+                  const items = activeDayMenu.meals[mealType as keyof Meal] || [];
                   return (
                     <div key={mealType} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="bg-teal-50 p-2 rounded-lg">
                           <span className="text-xl">{icon}</span>
                         </div>
-                        <h4 className="font-semibold text-gray-800 capitalize">
-                          {mealType}
-                        </h4>
+                        <h4 className="font-semibold text-gray-800 capitalize">{mealType}</h4>
                       </div>
                       {items.length > 0 ? (
                         <ul className="space-y-2 pl-2">
@@ -153,11 +154,7 @@ export const MenuComponent: React.FC = () => {
           </AnimatePresence>
         </div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
           <div className="bg-gray-50 p-6 rounded-full inline-block mb-4">
             <FaUtensils className="mx-auto text-4xl text-gray-300" />
           </div>

@@ -34,10 +34,10 @@ export const PlanDetails: React.FC<PlanDetailsProps> = ({ selectedFunctionality 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex items-center justify-center h-full min-h-[500px]"
+        className="flex items-center justify-center min-h-[400px] p-4"
       >
-        <div className="text-center max-w-md p-6 bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="bg-gray-50 p-4 rounded-full inline-block mb-4">
+        <div className="text-center max-w-md w-full p-4 sm:p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="bg-gray-50 p-3 sm:p-4 rounded-full inline-block mb-4">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-10 w-10 text-gray-300"
@@ -53,8 +53,8 @@ export const PlanDetails: React.FC<PlanDetailsProps> = ({ selectedFunctionality 
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">No Plan Selected</h2>
-          <p className="text-gray-600 mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">No Plan Selected</h2>
+          <p className="text-gray-600 mb-4 text-sm sm:text-base">
             Please select a plan from the sidebar to view details.
           </p>
           <button className="text-sm font-medium text-teal-600 hover:text-teal-800 transition-colors">
@@ -70,34 +70,34 @@ export const PlanDetails: React.FC<PlanDetailsProps> = ({ selectedFunctionality 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="p-6"
+      className="p-4 sm:p-6"
     >
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-start px-4 justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between px-2 sm:px-4">
+          <div className="mb-4 sm:mb-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
               {selectedPlan.messId?.messName}
             </h1>
-            <div className="flex items-center flex-wrap gap-2 mt-2">
-              <span className="bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full">
+            <div className="flex flex-wrap gap-2 mt-2">
+              <span className="bg-teal-100 text-teal-800 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full">
                 {selectedPlan.planId?.name}
               </span>
-              <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">
+              <span className="bg-gray-100 text-gray-800 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full">
                 ₹{selectedPlan.planId?.amount}
               </span>
-              <span className="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">
+              <span className="bg-gray-100 text-gray-800 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full">
                 {selectedPlan.planId?.durationDays} days
               </span>
               {selectedPlan.isPaused && (
-                <span className="bg-amber-100 text-amber-800 text-sm font-medium px-3 py-1 rounded-full">
+                <span className="bg-amber-100 text-amber-800 text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 rounded-full">
                   Currently Paused
                 </span>
               )}
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-500">
+          <div className="text-left sm:text-right text-sm text-gray-500">
+            <p>
               Started on{' '}
               {new Date(selectedPlan.purchaseDate).toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -105,7 +105,7 @@ export const PlanDetails: React.FC<PlanDetailsProps> = ({ selectedFunctionality 
                 day: 'numeric',
               })}
             </p>
-            <p className="text-sm text-gray-500">
+            <p>
               {selectedPlan.totalPaused
                 ? `Paused ${selectedPlan.totalPaused} days total`
                 : 'No pauses yet'}
@@ -114,14 +114,14 @@ export const PlanDetails: React.FC<PlanDetailsProps> = ({ selectedFunctionality 
         </div>
 
         {selectedPlan.planId?.description && (
-          <p className="text-gray-600 mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+          <p className="text-gray-600 mt-4 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm sm:text-base">
             {selectedPlan.planId.description}
           </p>
         )}
       </div>
 
       {/* Content */}
-      <div className="bg-white min-h-[500px] rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white min-h-[400px] sm:min-h-[500px] rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
         {renderContent()}
       </div>
     </motion.div>

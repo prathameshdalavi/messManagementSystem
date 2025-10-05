@@ -30,13 +30,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [loadingPlans, setLoadingPlans] = useState(false);
   const dispatch = useDispatch();
   const selectedPlan = useSelector(selectSelectedPlan);
+  const navigate = useNavigate();
 
   const sidebarItems = [
-    { label: "Home", subItems: [] },
-    { label: "My Plans", subItems: [] },
-    { label: "Profile"},
+    { label: "Home" },
+    { label: "My Plans" },
+    { label: "Profile" },
     { label: "Settings" },
-    { label: "Logout"},
+    { label: "Logout" },
   ];
 
   const functionalityButtons = [
@@ -48,176 +49,141 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "stats", label: "Statistics" },
   ];
 
+  const isMobile = () => window.innerWidth < 768;
+
   const handleMyPlansClick = async () => {
     setCurrentMenu("My Plans");
     setLoadingPlans(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`${BACKEND_URL}/api/v1/user/plans/myPlans`, {
-        headers: { token }
-      });
-
-      if (res.data.success) {
-        setUserPlans(res.data.data || []);
-      }
-    } catch (err) {
+      const res = await axios.get(`${BACKEND_URL}/api/v1/user/plans/myPlans`, { headers: { token } });
+      setUserPlans(res.data.data || []);
+    } catch {
       setUserPlans([]);
     } finally {
       setLoadingPlans(false);
     }
+
+    if (isMobile()) toggleSidebar(); // auto-close on mobile
   };
 
   const handlePlanSelect = (plan: any) => {
     dispatch(setSelectedPlan(plan));
     setCurrentMenu("planDetails");
-    setSelectedFunctionality("notices"); // Default to notices
+    setSelectedFunctionality("notices");
+
+    if (isMobile()) toggleSidebar(); // auto-close on mobile
   };
 
   const handleBackToMain = () => {
     dispatch(clearSelectedPlan());
     setCurrentMenu("main");
     setSelectedFunctionality("");
+
+    if (isMobile()) toggleSidebar();
   };
 
   const handleBackToPlans = () => {
     dispatch(clearSelectedPlan());
     setCurrentMenu("My Plans");
     setSelectedFunctionality("");
+
+    if (isMobile()) toggleSidebar();
   };
 
-  const navigate = useNavigate();
-
   const handleItemClick = (item: any) => {
-    if (item.label === "Home") {
-      navigate("/home"); // This will only change the Outlet content
-    }
-    else if (item.label === "My Plans") {
-      handleMyPlansClick();
-    }
-    else if (item.label === "Profile") {
-      navigate("/profile"); // Example future page
-    }
-    else if (item.label === "Settings") {
-      navigate("/settings"); // Example future page
-    }
+    if (item.label === "Home") navigate("/home");
+    else if (item.label === "My Plans") handleMyPlansClick();
+    else if (item.label === "Profile") navigate("/profile");
+    else if (item.label === "Settings") navigate("/settings");
     else if (item.label === "Logout") {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        alert("You are already logged out!");
-        return;
-      }
-
-      // Remove token from localStorage
       localStorage.removeItem("token");
-
-      // Optional: Clear Redux state
       dispatch(clearSelectedPlan());
       setUserPlans([]);
       setCurrentMenu("main");
       setSelectedFunctionality("");
-
-      alert("Logged out successfully!");
       navigate("/home");
+      alert("Logged out successfully!");
     }
 
+    if (isMobile()) toggleSidebar(); // auto-close on mobile
   };
 
   return (
-    <>
-      {/* Toggle Button */}
-      <button
-        onClick={toggleSidebar}
-        className={`fixed z-40 top-20 p-2 m-0.5 rounded-md bg-[#2F3349] text-white transition-all duration-300 ${opensidebar ? "left-[16rem]" : "left-2"
-          }`}
-      >
-        {opensidebar ? "✕" : "☰"}
-      </button>
-
-      {/* Sidebar Panel */}
-      <div
-        className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-[#2F3349] text-white transition-all duration-300 z-30 overflow-hidden ${opensidebar ? "w-64" : "w-0"
-          }`}
-      >
-        {/* Header or Back */}
-        <div className="px-4 py-3 text-xl border-bzzz text-center text-teal-500 border-gray-600 font-bold">
-          {selectedPlan ? (
-            <div className="space-y-2">
-              <div className="text-sm font-normal text-white">
-                {selectedPlan.messId?.messName}
-              </div>
-              <button
-                onClick={handleBackToPlans}
-                className="text-xs hover:underline cursor-pointer text-teal-300"
-              >
-                ← Back to Plans
-              </button>
-            </div>
-          ) : currentMenu !== "main" ? (
-            <button onClick={handleBackToMain} className="hover:underline">
-              ← Back
+    <div
+      className={`fixed top-0 left-0 h-full bg-[#2F3349] text-white z-40 transform transition-transform duration-300 w-64 md:translate-x-0 ${
+        opensidebar ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
+      {/* Header */}
+      <div className="px-4 py-4 border-b border-gray-700 text-center font-bold text-teal-400">
+        {selectedPlan ? (
+          <div className="space-y-2">
+            <div className="text-sm font-normal text-white">{selectedPlan.messId?.messName}</div>
+            <button onClick={handleBackToPlans} className="text-xs hover:underline text-teal-300">
+              ← Back to Plans
             </button>
-          ) : (
-            <div>Main Menu</div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex flex-col    justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-[calc(100%-3.5rem)] gap-y-25">
-          {/* Functionality Buttons - when plan is selected */}
-          {selectedPlan && currentMenu === "planDetails" && (
-            <div className="space-y-12 ">
-              {functionalityButtons.map((func) => (
-                <button
-                  key={func.id}
-                  onClick={() => setSelectedFunctionality(func.id)}
-                  className={`w-full text-center cursor-pointer  px-2 py-2 rounded transition-colors ${selectedFunctionality === func.id
-                      ? "bg-teal-600 text-white"
-                      : "hover:bg-gray-600 text-gray-200"
-                    }`}
-                >
-                  {func.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* My Plans List */}
-          {currentMenu === "My Plans" && !selectedPlan && (
-            loadingPlans ? (
-              <div className="text-center py-2">Loading...</div>
-            ) : userPlans.length > 0 ? (
-              userPlans.map((plan: any) => (
-                <button
-                  key={plan._id}
-                  onClick={() => handlePlanSelect(plan)}
-                  className="px-2 py-2 cursor-pointer hover:bg-gray-600 rounded text-center w-full"
-                >
-                  {plan.messId?.messName || "Unknown Mess"}
-                </button>
-              ))
-            ) : (
-              <div className="text-center py-2 text-gray-400">No plans found.</div>
-            )
-          )}
-
-          {/* Main Menu */}
-          {currentMenu === "main" && !selectedPlan &&
-            sidebarItems.map((item) => (
-              <button
-                key={item.label}
-                onClick={() =>
-                  item.label === "My Plans"
-                    ? handleMyPlansClick()
-                    : handleItemClick(item)
-                }
-                className="w-full text-center cursor-pointer  px-2 py-2 hover:bg-gray-700 rounded"
-              >
-                {item.label}
-              </button>
-            ))}
-        </div>
+          </div>
+        ) : currentMenu !== "main" ? (
+          <button onClick={handleBackToMain} className="hover:underline">
+            ← Back
+          </button>
+        ) : (
+          <div>Main Menu</div>
+        )}
       </div>
-    </>
+
+      {/* Sidebar Content */}
+      <div className="flex flex-col justify-start px-4 py-4 font-semibold text-lg overflow-y-auto h-full gap-2 md:gap-3">
+        {/* Functionality Buttons */}
+        {selectedPlan && currentMenu === "planDetails" &&
+          functionalityButtons.map((func) => (
+            <button
+              key={func.id}
+              onClick={() => {
+                setSelectedFunctionality(func.id);
+                if (isMobile()) toggleSidebar(); // auto-close on mobile
+              }}
+              className={`w-full text-center px-3 py-2 rounded transition-colors ${
+                selectedFunctionality === func.id
+                  ? "bg-teal-600 text-white"
+                  : "hover:bg-gray-700 text-gray-200"
+              }`}
+            >
+              {func.label}
+            </button>
+          ))}
+
+        {/* My Plans List */}
+        {currentMenu === "My Plans" && !selectedPlan &&
+          (loadingPlans ? (
+            <div className="text-center py-2">Loading...</div>
+          ) : userPlans.length > 0 ? (
+            userPlans.map((plan) => (
+              <button
+                key={plan._id}
+                onClick={() => handlePlanSelect(plan)}
+                className="px-3 py-2 w-full text-left rounded hover:bg-gray-700"
+              >
+                {plan.messId?.messName || "Unknown Mess"}
+              </button>
+            ))
+          ) : (
+            <div className="text-center py-2 text-gray-400">No plans found.</div>
+          ))}
+
+        {/* Main Menu */}
+        {currentMenu === "main" && !selectedPlan &&
+          sidebarItems.map((item) => (
+            <button
+              key={item.label}
+              onClick={() => handleItemClick(item)}
+              className="w-full text-left px-3 py-2 rounded hover:bg-gray-700"
+            >
+              {item.label}
+            </button>
+          ))}
+      </div>
+    </div>
   );
 };
