@@ -36,13 +36,12 @@ export const AttendanceComponent: React.FC = () => {
   const html5qrcodeRef = useRef<Html5Qrcode | null>(null);
   const selectedPlan = useSelector(selectSelectedPlan);
 
-  // Load previous history
+  // Load history from localStorage
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("attendanceHistory") || "[]");
     setHistory(stored);
   }, []);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopScanner();
@@ -76,14 +75,11 @@ export const AttendanceComponent: React.FC = () => {
         const devices = await Html5Qrcode.getCameras();
         if (!devices.length) throw new Error("No camera found.");
 
-        const backCam = devices.find((d) =>
-          /back|rear|environment/i.test(d.label)
-        );
+        const backCam = devices.find((d) => /back|rear|environment/i.test(d.label));
         const cameraId = backCam ? backCam.id : devices[0].id;
 
         setScanning(true);
 
-        // ✅ Pass current attendanceType to onScanSuccess
         await html5qrcodeRef.current.start(
           cameraId,
           { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -98,14 +94,7 @@ export const AttendanceComponent: React.FC = () => {
         console.error("Camera error:", err);
         stopScanner();
         const msg = err?.message || JSON.stringify(err);
-        if (/Permission|denied|NotAllowedError/i.test(msg))
-          setMessage({ type: "error", text: "Camera permission denied." });
-        else if (/NotFoundError|no camera/i.test(msg))
-          setMessage({ type: "error", text: "No suitable camera found." });
-        else if (/NotReadableError|track/i.test(msg))
-          setMessage({ type: "error", text: "Camera already in use." });
-        else
-          setMessage({ type: "error", text: `Camera error: ${msg}` });
+        setMessage({ type: "error", text: `Camera error: ${msg}` });
       }
     }, 500);
   };
@@ -126,12 +115,8 @@ export const AttendanceComponent: React.FC = () => {
 
   const onScanSuccess = async (decodedText: string, type: AttendanceType) => {
     await stopScanner();
-    setMessage({
-      type: "success",
-      text: "QR scanned successfully! Marking attendance...",
-    });
+    setMessage({ type: "success", text: "QR scanned! Marking attendance..." });
 
-    // Save to history
     const newEntry: AttendanceHistoryEntry = {
       messId: decodedText,
       type,
@@ -154,16 +139,17 @@ export const AttendanceComponent: React.FC = () => {
       const token = localStorage.getItem("token");
       const res = await axios.post(
         `${BACKEND_URL}/api/v1/user/attendance/markattendance`,
-        { messId: messIdFromScan, type }, // ✅ use passed type
+        { messId: messIdFromScan, type },
         { headers: { token } }
       );
+
       if (res.data.success) {
         setMessage({ type: "success", text: "Attendance marked successfully!" });
       }
     } catch (error: any) {
       setMessage({
         type: "error",
-        text: error?.response?.data?.message || "Failed to mark attendance. Try again.",
+        text: error?.response?.data?.message || "Failed to mark attendance.",
       });
     }
   };
@@ -180,19 +166,16 @@ export const AttendanceComponent: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <FaCalendarAlt className="text-teal-500" />
-            Attendance Records
+            <FaCalendarAlt className="text-teal-500" /> Attendance Records
           </h3>
           {selectedPlan?.messId?.messName && (
-            <p className="text-sm text-gray-600 mt-1">
-              Mess: {selectedPlan.messId.messName}
-            </p>
+            <p className="text-sm text-gray-600 mt-1">Mess: {selectedPlan.messId.messName}</p>
           )}
         </div>
         <button
           onClick={startScanner}
           disabled={showScanner}
-          className="bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          className="bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <FaQrcode /> Scan QR
         </button>
@@ -219,10 +202,7 @@ export const AttendanceComponent: React.FC = () => {
               )}
               <span>{message.text}</span>
             </div>
-            <button
-              onClick={clearMessage}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={clearMessage} className="text-gray-400 hover:text-gray-600">
               <FaTimes />
             </button>
           </motion.div>
@@ -240,22 +220,15 @@ export const AttendanceComponent: React.FC = () => {
             <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
               <FaCamera className="text-teal-500" /> Scan QR Code
             </h4>
-            <button
-              onClick={stopScanner}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={stopScanner} className="text-gray-400 hover:text-gray-600">
               <FaTimes size={20} />
             </button>
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Meal Type
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Meal Type</label>
             <select
               value={attendanceType}
-              onChange={(e) =>
-                setAttendanceType(e.target.value as AttendanceType)
-              }
+              onChange={(e) => setAttendanceType(e.target.value as AttendanceType)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="breakfast">Breakfast</option>
@@ -263,10 +236,7 @@ export const AttendanceComponent: React.FC = () => {
               <option value="dinner">Dinner</option>
             </select>
           </div>
-          <div
-            id="qr-reader"
-            className="w-full max-w-md mx-auto rounded-lg overflow-hidden"
-          />
+          <div id="qr-reader" className="w-full max-w-md mx-auto rounded-lg overflow-hidden" />
           {scanning && (
             <div className="text-center mt-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto" />
@@ -276,15 +246,12 @@ export const AttendanceComponent: React.FC = () => {
         </motion.div>
       )}
 
-      {/* Inline History */}
+      {/* History */}
       {history.length > 0 && (
         <div className="mt-6">
           <div className="flex justify-between items-center mb-2">
             <h4 className="text-lg font-semibold text-gray-800">Scan History</h4>
-            <button
-              onClick={clearHistory}
-              className="text-red-600 hover:text-red-800 text-sm"
-            >
+            <button onClick={clearHistory} className="text-red-600 hover:text-red-800 text-sm">
               Clear History
             </button>
           </div>
