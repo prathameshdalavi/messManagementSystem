@@ -24,7 +24,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
       });
 
       const { latitude: lat, longitude: lng } = position.coords;
-      const response = await axios.get(`${BACKEND_URL}/api/v1/user/mess/nearby`, {
+      const response = await axios.get(`${BACKEND_URL}/api/v1/user/messes/nearby`, {
         params: { lat, lng },
       });
 
