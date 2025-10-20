@@ -16,18 +16,38 @@ export const NavBar = ({ toggleSidebar }: NavBarProps) => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      axios
-        .get(`${BACKEND_URL}/api/v1/user/settings/getuser`, {
+    const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setUserInitial(null);
+        return;
+      }
+      try {
+        const res = await axios.get(`${BACKEND_URL}/api/v1/user/settings/getuser`, {
           headers: { token },
-        })
-        .then((res) => {
-          const name = res.data.data?.name;
-          if (name) setUserInitial(name.charAt(0).toUpperCase());
-        })
-        .catch((err) => console.error("Error fetching user:", err));
-    }
+        });
+        const name = res.data?.data?.name;
+        setUserInitial(name ? name.charAt(0).toUpperCase() : null);
+      } catch (err) {
+        console.error("Error fetching user:", err);
+        setUserInitial(null);
+      }
+    };
+
+    fetchUser();
+
+    const onAuthChanged = () => fetchUser(); // fired by sidebar after logout/login
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "token") fetchUser(); // handles token change from other tabs
+    };
+
+    window.addEventListener("authChanged", onAuthChanged);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("authChanged", onAuthChanged);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   return (
@@ -62,7 +82,7 @@ export const NavBar = ({ toggleSidebar }: NavBarProps) => {
             <span className="font-bold text-xl text-white">KC</span>
           </div>
           <span className="text-xl sm:text-2xl text-teal-700 font-bold">
-            Khanna Cloud
+            Khaana Cloud
           </span>
         </div>
       </div>
