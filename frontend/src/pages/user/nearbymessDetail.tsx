@@ -13,7 +13,7 @@ import {
   FaCalendarAlt, 
   FaPauseCircle,
   FaCoffee,
-  FaSun,
+  FaSun,   
   FaMoon,
   FaAppleAlt,
   FaCheck,
@@ -71,7 +71,7 @@ export const NearbyMessDetail = () => {
         const menuArray: MenuItem[] = menuRes.data.data.menu;
         const menuMap: Record<string, Meal> = {};
         menuArray.forEach((item) => {
-          menuMap[item.day] = item.meals;
+          menuMap[item.day] = item.meals;     
         });
         setMenuData(menuMap);
 
@@ -86,7 +86,7 @@ export const NearbyMessDetail = () => {
       }
     };
 
-    fetchMenuAndPlans();
+    fetchMenuAndPlans();   
   }, [mess]);
 
   const handleBuyPlan = async (plan: Plan) => {

@@ -1,4 +1,4 @@
-import React, { useState, type RefObject } from "react";
+import React, { useState, type RefObject, useRef, useCallback } from "react";
 import { FaLocationArrow, FaUtensils } from "react-icons/fa";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
@@ -15,6 +15,11 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [nearbyMesses, setNearbyMesses] = useState<any[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // refs for cancelling and debouncing requests
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const debounceRef = useRef<number | null>(null);
 
   const handleGetCurrentLocation = async () => {
     setIsLocating(true);
@@ -24,8 +29,12 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
       });
 
       const { latitude: lat, longitude: lng } = position.coords;
-      const response = await axios.get(`${BACKEND_URL}/api/v1/user/messes/nearby`, {
+      // cancel any ongoing search
+      if (searchAbortRef.current) searchAbortRef.current.abort();
+
+      const response = await axios.get(`${BACKEND_URL}/api/v1/user/mess/nearby`, {
         params: { lat, lng },
+        timeout: 8000,
       });
 
       navigate("/nearby", { state: { messes: response.data?.data || [] } });
@@ -37,28 +46,70 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
     }
   };
 
+  const doSearch = useCallback(
+    async (query: string) => {
+      // cancel previous
+      if (searchAbortRef.current) searchAbortRef.current.abort();
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
+
+      setLoading(true);
+      setShowResults(false);
+      try {
+        const response = await axios.get(`${BACKEND_URL}/api/v1/user/mess/search`, {
+          params: { q: query },
+          signal: controller.signal,
+          timeout: 8000,
+        });
+        setNearbyMesses(response.data?.data || []);
+        setShowResults(true);
+      } catch (err: any) {
+        if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") {
+          // request cancelled, ignore
+          return;
+        }
+        console.error("Search error:", err);
+        setNearbyMesses([]);
+        setShowResults(true);
+      } finally {
+        setLoading(false);
+        searchAbortRef.current = null;
+      }
+    },
+    []
+  );
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    setIsLocating(true);
-    setShowResults(false);
-
-    try {
-      const response = await axios.get(`${BACKEND_URL}/api/v1/user/mess/search`, {
-        params: { q: searchQuery },
-      });
-
-      setNearbyMesses(response.data?.data || []);
-      setShowResults(true);
-    } catch (err) {
-      console.error("Search error:", err);
-      setNearbyMesses([]);
-      setShowResults(true);
-    } finally {
-      setIsLocating(false);
+    // clear debounce if any and run immediately (button click)
+    if (debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+      debounceRef.current = null;
     }
+    doSearch(searchQuery.trim());
+  };
+
+  // optional: debounce on typing to prefetch results
+  const handleQueryChange = (val: string) => {
+    setSearchQuery(val);
+    if (!val.trim()) {
+      // clear results quickly
+      if (searchAbortRef.current) searchAbortRef.current.abort();
+      setNearbyMesses([]);
+      setShowResults(false);
+      setLoading(false);
+      return;
+    }
+    // debounce 350ms
+    if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(() => {
+      doSearch(val.trim());
+      debounceRef.current = null;
+    }, 350);
   };
 
   const handleResultClick = (mess: any) => {
+    // navigate quickly and pass results
     navigate("/nearby", { state: { messes: [mess] } });
   };
 
@@ -89,7 +140,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleQueryChange(e.target.value)}
                   placeholder="Enter college, area, or hostel name"
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-base sm:text-lg"
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -102,7 +153,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
                 <button
                   onClick={handleGetCurrentLocation}
                   disabled={isLocating}
-                  className="flex items-center justify-center gap-2 bg-teal-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-teal-600 transition disabled:opacity-70"
+                  className="flex items-center justify-center gap-2 bg-teal-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-teal-600 transition disabled:opacity-70 cursor-pointer"
                   aria-label="Use current location"
                 >
                   <FaLocationArrow />{" "}
@@ -112,10 +163,10 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
                 <button
                   onClick={handleSearch}
                   disabled={isLocating || !searchQuery.trim()}
-                  className="bg-teal-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-teal-700 transition disabled:opacity-70"
+                  className="bg-teal-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-teal-700 transition disabled:opacity-70 cursor-pointer flex items-center justify-center"
                   aria-label="Search"
                 >
-                  Search
+                  {loading ? "Searching..." : "Search"}
                 </button>
               </div>
             </div>
@@ -135,7 +186,9 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 text-center">
                 {nearbyMesses.length > 0
                   ? `Found ${nearbyMesses.length} mess${nearbyMesses.length > 1 ? "es" : ""}`
-                  : "No messes found"}
+                  : loading
+                    ? "Searching..."
+                    : "No messes found"}
               </h3>
 
               {nearbyMesses.length > 0 ? (
@@ -180,7 +233,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
                 </div>
               ) : (
                 <div className="text-center py-8 text-sm text-gray-500">
-                  Try a different keyword or use your current location.
+                  {loading ? "Searching, please wait..." : "Try a different keyword or use your current location."}
                 </div>
               )}
             </motion.div>
