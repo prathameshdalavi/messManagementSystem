@@ -1,16 +1,16 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { SignupPage } from './pages/user/signup';
-import { NearbyMessPage } from './pages/user/nearbyMess';
-import { NearbyMessDetail } from './pages/user/nearbymessDetail';
-import { UserDashboard } from './pages/user/dashboard';
-import { SignInPage } from './pages/user/signin';
-import { HomePage } from './pages/user/home';
-import { ProfilePage } from './pages/user/profile';
-import SettingsPage from './pages/user/setting';
+import { HashRouter, Routes, Route } from "react-router-dom";
+import { SignupPage } from "./pages/user/signup";
+import { NearbyMessPage } from "./pages/user/nearbyMess";
+import { NearbyMessDetail } from "./pages/user/nearbymessDetail";
+import { UserDashboard } from "./pages/user/dashboard";
+import { SignInPage } from "./pages/user/signin";
+import { HomePage } from "./pages/user/home";
+import { ProfilePage } from "./pages/user/profile";
+import SettingsPage from "./pages/user/setting";
 
-function App() {
+export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/signup" element={<SignupPage />} />
@@ -25,8 +25,6 @@ function App() {
           {/* Add more nested routes here if needed */}
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
-
-export default App;
