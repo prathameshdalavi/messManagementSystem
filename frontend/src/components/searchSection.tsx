@@ -32,7 +32,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({ searchRef }) => {
       // cancel any ongoing search
       if (searchAbortRef.current) searchAbortRef.current.abort();
 
-      const response = await axios.get(`${BACKEND_URL}/api/v1/user/mess/nearby`, {
+      const response = await axios.get(`${BACKEND_URL}/api/v1/user/messes/nearby`, {
         params: { lat, lng },
         timeout: 8000,
       });
